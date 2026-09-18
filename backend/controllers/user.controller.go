@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"time"
 	"lockbox/models"
 	"lockbox/services"
 	"lockbox/config"
@@ -41,7 +41,7 @@ func CreateUserController(c *gin.Context) {
         return
     }
 
-    userKey, err := services.GenerateUserKey()
+    EncryptionKey, err := services.GenerateUserKey()
     if err != nil {
         c.JSON(500, gin.H{"error": "Error creating the security key"})
         return
@@ -50,7 +50,7 @@ func CreateUserController(c *gin.Context) {
     user := models.User{
         Email:         input.Email,
         Password:      hashed,
-        EncryptionKey: userKey,
+        EncryptionKey: EncryptionKey,
     }
 
     if err := config.DB.Create(&user).Error; err != nil {
@@ -62,48 +62,60 @@ func CreateUserController(c *gin.Context) {
 }
 
 func LoginUserController(c *gin.Context) {
-	
-	var input struct {
-        Email    	string 		`json:"email"`
-        Password 	string 		`json:"password"`
-    } 
-    
+
+    var input struct {
+        Email    string `json:"email"`
+        Password string `json:"password"`
+    }
+
     if err := c.ShouldBindJSON(&input); err != nil {
         c.JSON(400, gin.H{"error": "Invalid JSON data"})
         return
     }
 
-    log.Printf("[Login] Tentative de connexion pour : %s", input.Email)
-    
     var user models.User
     if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-    	log.Printf("[Login] Utilisateur non trouvé : %s", input.Email)
-    	c.JSON(401, gin.H{"error": "Incorrect credentials"})
-    	return
+        c.JSON(401, gin.H{"error": "User Not Found"})
+        return
     }
 
-    log.Printf("[Login] Utilisateur trouvé : %s", user.Email)
-    log.Printf("[Login] Hash en DB : %s", user.Password)
-    log.Printf("[Login] Mot de passe reçu : %s", input.Password)
-    
     if !services.CheckPasswordHash(input.Password, user.Password) {
-        log.Printf("[Login] Mot de passe incorrect pour : %s", user.Email)
         c.JSON(401, gin.H{"error": "Incorrect password"})
         return
     }
 
-    log.Printf("[Login] Connexion réussie pour : %s", user.Email)
+    accessToken, err := services.GenerateToken(user.ID, user.Email)
+    if err != nil {
+        c.JSON(500, gin.H{"error": "Error generating token"})
+        return
+    }
 
-    newToken, _ := services.GenerateToken(user.Email)
-    config.DB.Model(&user).Update("Token", newToken)
-        
+    refreshTokenString, err := services.GenerateRefreshToken()
+    if err != nil {
+        c.JSON(500, gin.H{"error": "Error generating refresh token"})
+        return
+    }
+
+    refreshToken := models.RefreshToken{
+        UserID:    user.ID,
+        Token:     refreshTokenString,
+        ExpiresAt: time.Now().Add(time.Hour * 24),
+        Revoked:   false,
+    }
+
+    if err := config.DB.Create(&refreshToken).Error; err != nil {
+        c.JSON(500, gin.H{"error": "Error saving refresh token"})
+        return
+    }
+
     c.JSON(200, gin.H{
-    	"message": "Login successful",
-     	"token": newToken,
-    	"user": gin.H{
-        	"id": user.ID,
-        	"email": user.Email,
-    	},
+        "message":       "Login successful",
+        "token":         accessToken,
+        "refresh_token": refreshTokenString,
+        "user": gin.H{
+            "id":    user.ID,
+            "email": user.Email,
+        },
     })
 }
 
@@ -124,7 +136,7 @@ func UpdateUserController(c *gin.Context) {
 
 	var user models.User
 
-	if err := config.DB.Where("id = ?", c.Param("id")).First(&user).Error; err != nil {
+	if err := config.DB.Where("id = ?", c.MustGet("userID").(uint)).First(&user).Error; err != nil {
 		c.JSON(404, gin.H{"error": "User not found"})
 		return
 	}

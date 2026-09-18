@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${PostgrePassword}
       POSTGRES_DB: ${PostgreName}
     ports:
-      - "${PostgrePort}:5432"
+      - "${PostgrePort}:${PostgrePort}"
     volumes:
       - db:/var/lib/postgresql/data
     networks:
@@ -36,7 +36,7 @@ services:
       - FRONTEND_URL=${Frontend_URL}
       - JWT_SECRET=${JWT_SECRET}
     volumes:
-      - ./backend:/app:Z
+      - ./backend:/app:Z 
     depends_on:
       database:
         condition: service_healthy
@@ -47,21 +47,18 @@ services:
     container_name: frontend
     build:
       context: ./frontend
-      dockerfile: dockerfile
+      dockerfile: Dockerfile.dev
     restart: unless-stopped
     ports:
-      - "${Frontend_Port}:3300"
+      - "${Frontend_Port}:${Frontend_Port}"
     environment:
       VITE_API_URL: ${Backend_API_URL}
       Frontend_Port: ${Frontend_Port}
-    depends_on:
-      - backend
     volumes:
       - ./frontend:/app:Z
       - /app/node_modules
     networks:
       - Network
-
 
 volumes:
   db:

@@ -42,6 +42,7 @@ func JwtMiddleware() gin.HandlerFunc {
 		}
 		
 		c.Set("userEmail", claims["name"])
+		c.Set("userID", uint(claims["id"].(float64)))
 		c.Next()
 	}
 }

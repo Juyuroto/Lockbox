@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${PostgrePassword}
       POSTGRES_DB: ${PostgreName}
     ports:
-      - "${PostgrePort}:5432"
+      - "${PostgrePort}:${PostgrePort}"
     volumes:
       - db:/var/lib/postgresql/data
     networks:
@@ -25,7 +25,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "${Backend_Port}:3305"
+      - "${Backend_Port}:${Backend_Port}"
     environment:
       - PostgreUser=${PostgreUser}
       - PostgrePassword=${PostgrePassword}
@@ -44,10 +44,10 @@ services:
     container_name: frontend
     build:
       context: ./frontend
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${Frontend_Port}:3300"
+      - "${Frontend_Port}:${Backend_Port}"
     environment:
       VITE_API_URL: ${Backend_API_URL}
       Frontend_Port: ${Frontend_Port}

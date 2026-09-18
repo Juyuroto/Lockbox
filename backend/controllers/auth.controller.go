@@ -1,0 +1,87 @@
+package controllers
+
+import(
+	"time"
+	"lockbox/models"
+	"lockbox/services"
+	"lockbox/config"
+	
+	"github.com/gin-gonic/gin"
+)
+
+func RefreshTokenController(c *gin.Context) {
+	var input struct {
+    	Token string `json:"token"`
+	}
+	
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(400, gin.H{"error": "Invalid JSON data"})
+        return
+    }
+
+    var token models.RefreshToken
+    if err := config.DB.Where("Token = ?", input.Token).First(&token).Error; err != nil {
+        c.JSON(404, gin.H{"error": "Token not found"})
+        return
+    }
+
+    if token.Revoked {
+        c.JSON(401, gin.H{"error": "Token revoked"})
+        return
+    }
+
+    if token.ExpiresAt.Before(time.Now()) {
+        c.JSON(401, gin.H{"error": "Token has expired"})
+        return
+    }
+
+    var user models.User
+    if err := config.DB.First(&user, token.UserID).Error; err != nil {
+        c.JSON(404, gin.H{"error": "User not found"})
+        return
+    }
+    
+    newToken, err := services.GenerateToken(user.ID, user.Email)
+    if err != nil {
+        c.JSON(500, gin.H{"error": "Error generating token"})
+        return
+    }
+
+    c.JSON(200, gin.H{
+    	"message": "New Token",
+     	"token": newToken,
+    	"user": gin.H{
+        	"id": user.ID,
+        	"email": user.Email,
+    	},
+    })
+}
+
+func RefreshTokenLogoutController(c *gin.Context) {
+    var input struct {
+        Token string `json:"token"`
+    }
+
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(400, gin.H{"error": "Invalid JSON data"})
+        return
+    }
+
+    var token models.RefreshToken
+    if err := config.DB.Where("token = ?", input.Token).First(&token).Error; err != nil {
+        c.JSON(404, gin.H{"error": "Token not found"})
+        return
+    }
+
+    if token.Revoked {
+        c.JSON(401, gin.H{"error": "Token already revoked"})
+        return
+    }
+
+    if err := config.DB.Model(&token).Update("revoked", true).Error; err != nil {
+        c.JSON(500, gin.H{"error": "Error revoking token"})
+        return
+    }
+
+    c.JSON(200, gin.H{"message": "Logged out successfully"})
+}

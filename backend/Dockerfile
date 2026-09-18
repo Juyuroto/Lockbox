@@ -9,6 +9,6 @@ COPY . .
 
 RUN go build -o api ./
 
-EXPOSE 8000
+EXPOSE ${Backend_Port}
 
 CMD ["./api"]
