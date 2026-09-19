@@ -10,7 +10,6 @@ func PasswordRoute(router *gin.Engine) {
 
 	protected := router.Group("/").Use(middlewares.JwtMiddleware())
 
-	protected.GET("/passwords", controllers.GetAllPasswordController)
 	protected.GET("/passwords/:id", controllers.GetPasswordByIDController)
 	protected.PUT("/passwords/:id", controllers.UpdatePasswordController)
 	protected.DELETE("/passwords/:id", controllers.DeletePasswordController)

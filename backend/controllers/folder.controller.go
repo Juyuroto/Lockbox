@@ -7,14 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllFolderController(c *gin.Context) {
-	
-	folder := []models.Folder{}
-	config.DB.Find(&folder)
-	c.JSON(200, &folder)
-	
-}
-
 func GetFolderByIDController(c *gin.Context) {
 	id := c.Param("id")
 	var folder models.Folder

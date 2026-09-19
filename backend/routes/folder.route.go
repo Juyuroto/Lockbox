@@ -10,7 +10,6 @@ func FolderRoute(router *gin.Engine) {
 
 	protected := router.Group("/").Use(middlewares.JwtMiddleware())
 
-	protected.GET("/folders", controllers.GetAllFolderController)
 	protected.GET("/folders/:id", controllers.GetFolderByIDController)
 	protected.GET("/folders/:id/number", controllers.GetFolderNumberPasswordController)
 	protected.GET("/folders/:id/passwords", controllers.GetFolderPasswordsController)

@@ -7,22 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllPasswordController(c *gin.Context) {
-
-	password := []models.Password{}
-	config.DB.Find(&password)
-	c.JSON(200, &password)
-
-}
-
 func GetPasswordByIDController(c *gin.Context) {
 
+	userID := c.MustGet("userID").(uint)
+	
 	id := c.Param("id")
 	var passwords models.Password
 
-	result := config.DB.First(&passwords, id)
-	if result.Error != nil {
-		c.JSON(404, gin.H{"error": "Folder Not Found",})
+	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).First(&passwords).Error; err != nil {
+		c.JSON(404, gin.H{"error": "Password Not Found",})
 		return
 	}
 
