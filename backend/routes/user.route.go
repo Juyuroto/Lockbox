@@ -12,6 +12,7 @@ func UserRoute(router *gin.Engine) {
 	
 	protected.GET("/user", controllers.GetUserController)
 	router.POST("/signup", controllers.CreateUserController)
+	router.POST("/signup/complete", controllers.CreateUserCompleteController)
 	router.POST("/login", controllers.LoginUserController)
 	protected.DELETE("/user/:id", controllers.DeleteUserController)
 	protected.PUT("/user/:id", controllers.UpdateUserController)

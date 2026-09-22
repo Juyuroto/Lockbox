@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { authService } from '../services/api';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/Input';
@@ -8,32 +8,43 @@ import '../assets/css/Signup.css';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const navigate = useNavigate();
+  const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-
-    if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      await authService.register(email, password);
-      navigate('/login', { state: { message: 'Compte créé avec succès ! Connectez-vous.' } });
+      await authService.register(email);
+      setSent(true);
     } catch (err) {
       setError(err.message || 'Erreur lors de la création du compte');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (sent) {
+    return (
+      <AuthLayout>
+        <div className="signup-card">
+          <div className="signup-header">
+            <h1 className="signup-title">Vérifie ta boîte mail</h1>
+            <p className="signup-subtitle">
+              Un email de confirmation a été envoyé à <strong>{email}</strong>. Clique sur le lien qu'il contient pour activer ton compte.
+            </p>
+          </div>
+
+          <p className="signup-footer">
+            Pas reçu l'email ?{' '}
+            <Link to="/signup" className="auth-link" onClick={() => setSent(false)}>Réessayer</Link>
+          </p>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>
@@ -54,24 +65,8 @@ export default function Signup() {
             placeholder="exemple@domaine.com"
             required
           />
-          <Input
-            label="Mot de passe maître"
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-          <Input
-            label="Confirmer le mot de passe"
-            type="password"
-            value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
           <Button type="submit" isLoading={isLoading}>
-            S'inscrire
+            Continuer
           </Button>
         </form>
 

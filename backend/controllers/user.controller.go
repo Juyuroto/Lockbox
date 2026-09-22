@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"time"
+	"net/url"
+	
 	"lockbox/models"
 	"lockbox/services"
 	"lockbox/config"
@@ -21,7 +23,6 @@ func CreateUserController(c *gin.Context) {
 
     var input struct {
         Email    string `json:"email"`
-        Password string `json:"password"`
     }
 
     if err := c.ShouldBindJSON(&input); err != nil {
@@ -31,6 +32,48 @@ func CreateUserController(c *gin.Context) {
 
     var existingUser models.User
     if err := config.DB.Where("email = ?", input.Email).First(&existingUser).Error; err == nil {
+        c.JSON(409, gin.H{"error": "This email is already in use."})
+        return
+    }
+
+    token, err := services.GenerateVerificationToken(input.Email)
+    if err != nil {
+        c.JSON(500, gin.H{"error": "Error generating token"})
+        return
+    }
+
+    verificationURL := "http://localhost:3000/verify?token=" + url.QueryEscape(token)
+
+    err = services.SendMail(input.Email, verificationURL)
+    
+    if err != nil {
+    	c.JSON(500, gin.H{"error": "jsp"})
+     	return
+    }
+
+    c.JSON(200, gin.H{"message": "Mail submit"})
+}
+
+func CreateUserCompleteController(c *gin.Context) {
+
+	var input struct {
+        Password 	string 		`json:"password"`
+        Token		string		`json:"token"`
+    }
+
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(400, gin.H{"error": "Token invalide ou expiré"})
+        return
+    }
+
+    email, err := services.VerifyVerificationToken(input.Token)
+    if err != nil {
+        c.JSON(401, gin.H{"error": "Invalid JSON data"})
+        return
+    }
+    
+    var existingUser models.User
+    if err := config.DB.Where("email = ?", email).First(&existingUser).Error; err == nil {
         c.JSON(409, gin.H{"error": "This email is already in use."})
         return
     }
@@ -48,9 +91,9 @@ func CreateUserController(c *gin.Context) {
     }
 
     user := models.User{
-        Email:         input.Email,
-        Password:      hashed,
-        EncryptionKey: EncryptionKey,
+    	Email:			email,
+        Password:		hashed,
+        EncryptionKey:	EncryptionKey,
     }
 
     if err := config.DB.Create(&user).Error; err != nil {

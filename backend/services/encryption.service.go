@@ -1,12 +1,10 @@
 package services
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"io"
 
 )
 
@@ -44,14 +42,14 @@ func EncryptionAES(plaintext string, key string) (string, error) {
     return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func DecryptionAES(ciphertext string, key string) (string, error) {
+// func DecryptionAES(ciphertext string, key string) (string, error) {
 
-	keyBytes, err := base64.StdEncoding.DecodeString(key) 
-	if err != nil {
-		return "", err
-	}
+// 	keyBytes, err := base64.StdEncoding.DecodeString(key) 
+// 	if err != nil {
+// 		return "", err
+// 	}
 	
-    // 2. Extraire le nonce (12 premiers bytes)
-    // 3. Déchiffrer le reste
-    // 4. Retourner le texte en clair
-}
+//     // 2. Extraire le nonce (12 premiers bytes)
+//     // 3. Déchiffrer le reste
+//     // 4. Retourner le texte en clair
+// }

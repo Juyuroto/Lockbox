@@ -12,7 +12,9 @@ const authHeaders = () => ({
 const handleResponse = async (response) => {
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Une erreur est survenue');
+    const error = new Error(data.error || 'Une erreur est survenue');
+    error.status = response.status;
+    throw error;
   }
   return data;
 };
@@ -21,11 +23,20 @@ const handleResponse = async (response) => {
 
 export const authService = {
 
-  register: async (email, password) => {
+  register: async (email) => {
     const response = await fetch(`${API_URL}/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email }),
+    });
+    return handleResponse(response);
+  },
+
+  completeRegistration: async (token, password) => {
+    const response = await fetch(`${API_URL}/signup/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
     });
     return handleResponse(response);
   },

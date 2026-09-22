@@ -3,9 +3,11 @@ package services
 import (
 	"time"
     "os"
-	"github.com/golang-jwt/jwt/v5"
+    "errors"
 	"crypto/rand"
 	"encoding/hex"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func GenerateToken(userID uint,email string) (string, error) { // génère un JWT 15min
@@ -15,7 +17,16 @@ func GenerateToken(userID uint,email string) (string, error) { // génère un JW
         "exp":  time.Now().Add(time.Minute * 15).Unix(),
     }
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+    return token.SignedString([]byte(os.Getenv("JWT_SECRET_1")))
+}
+
+func GenerateVerificationToken(email string) (string, error) { // génère un JWT 15min
+    claims := jwt.MapClaims{
+        "name": email,
+        "exp":  time.Now().Add(time.Hour * 2).Unix(),
+    }
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString([]byte(os.Getenv("JWT_SECRET_2")))
 }
 
 func GenerateRefreshToken() (string, error) {
@@ -25,4 +36,29 @@ func GenerateRefreshToken() (string, error) {
         return "", err
     }
     return hex.EncodeToString(bytes), nil
+}
+
+func VerifyVerificationToken(tokenString string) (string, error) {
+    token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+        return []byte(os.Getenv("JWT_SECRET")), nil
+    })
+    if err != nil || !token.Valid {
+        return "", errors.New("invalid or expired token")
+    }
+
+    claims, ok := token.Claims.(jwt.MapClaims)
+    if !ok {
+        return "", errors.New("invalid token claims")
+    }
+
+    if claims["purpose"] != "email_verification" {
+        return "", errors.New("wrong token purpose")
+    }
+
+    email, ok := claims["email"].(string)
+    if !ok {
+        return "", errors.New("email claim missing")
+    }
+
+    return email, nil
 }

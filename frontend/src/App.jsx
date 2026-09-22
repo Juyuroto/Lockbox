@@ -4,6 +4,7 @@ import "./assets/css/App.css";
 // Pages & Components
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import VerifyEmail from "./pages/VerifyEmail";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import PageTransition from "./components/PageTransition";
@@ -33,7 +34,13 @@ function App() {
                 <Signup />
               </PageTransition>
             } />
-            
+
+            <Route path="/verify" element={
+              <PageTransition>
+                <VerifyEmail />
+              </PageTransition>
+            } />
+
             <Route 
               path="/dashboard" 
               element={

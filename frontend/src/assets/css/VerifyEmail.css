@@ -1,0 +1,35 @@
+/* ── Verify email card ── */
+.verify-card {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.verify-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.verify-title {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--color-lockbox-950);
+  letter-spacing: -0.03em;
+}
+
+.verify-subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-lockbox-500);
+  line-height: 1.6;
+}
+
+.verify-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
