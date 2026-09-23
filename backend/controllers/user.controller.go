@@ -3,7 +3,9 @@ package controllers
 import (
 	"time"
 	"net/url"
-	
+	"os"
+	"log"
+
 	"lockbox/models"
 	"lockbox/services"
 	"lockbox/config"
@@ -42,12 +44,13 @@ func CreateUserController(c *gin.Context) {
         return
     }
 
-    verificationURL := "http://localhost:3000/verify?token=" + url.QueryEscape(token)
+    verificationURL := os.Getenv("FRONTEND_URL") + "/verify?token=" + url.QueryEscape(token)
 
     err = services.SendMail(input.Email, verificationURL)
     
     if err != nil {
-    	c.JSON(500, gin.H{"error": "jsp"})
+    	log.Println("SendMail error:", err)
+    	c.JSON(500, gin.H{"error": "Error Send Mail"})
      	return
     }
 

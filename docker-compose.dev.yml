@@ -36,9 +36,10 @@ services:
       - FRONTEND_URL=${Frontend_URL_Dev}
       - JWT_SECRET_1=${JWT_SECRET_1}
       - JWT_SECRET_2=${JWT_SECRET_2}
-      - ACME_EMAIL=${PersoMail_dev}
+      - ACME_EMAIL=${PersoMail_Dev}
       - SMTP_SERVER=${SMTP_Dev}
-      - PASSWORD={AppPassword_Dev}
+      - MYMAIL=${PersoMail_Dev}
+      - PASSWORD=${AppPassword_Dev}
     volumes:
       - ./backend:/app:Z 
     depends_on:

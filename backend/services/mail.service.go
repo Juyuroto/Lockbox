@@ -17,7 +17,7 @@ var (
 
 func SendMail(email string, verificationURL string) error {
 
-	t, err := template.ParseFiles("../templates/emails/verify-email.html")
+	t, err := template.ParseFiles("templates/emails/verify-email.html")
 
 	if err != nil {
 		return err
