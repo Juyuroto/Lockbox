@@ -1,44 +1,96 @@
+import { useState } from 'react';
 import { icons } from '../assets/icons/icons';
 
-export default function Sidebar({ folders, selectedFolder, onSelectFolder, onLogout, passwordCount }) {
+const STORAGE_KEY = 'lockbox_sidebar_collapsed';
+
+// L'état réduit/agrandi est gardé dans le navigateur
+function loadCollapsed() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export default function Sidebar({ folders, selectedFolder, onSelectFolder, trashActive, onSelectTrash, onLogout, passwordCount }) {
+  const [collapsed, setCollapsed] = useState(loadCollapsed);
+
   const IconGrid = icons.grid;
   const IconFolder = icons.folder;
+  const IconDeleted = icons.deleteOutline;
   const IconLogout = icons.logout;
+  const IconChevron = icons.downFill;
+
+  const toggle = () => {
+    setCollapsed(c => {
+      try {
+        localStorage.setItem(STORAGE_KEY, String(!c));
+      } catch {
+        // stockage indisponible : l'état reste valable pour la session
+      }
+      return !c;
+    });
+  };
+
+  // En mode réduit, le texte est masqué : la bulle au survol donne le nom
+  const tooltip = (label) => (collapsed ? label : undefined);
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
         <span className="sidebar-title">Lockbox</span>
+        <button
+          className="sidebar-toggle"
+          onClick={toggle}
+          title={collapsed ? 'Agrandir le menu' : 'Réduire le menu'}
+          aria-label={collapsed ? 'Agrandir le menu' : 'Réduire le menu'}
+          aria-expanded={!collapsed}
+        >
+          <IconChevron className="sidebar-toggle-icon" />
+        </button>
       </div>
 
       <nav className="sidebar-nav">
-        <p className="sidebar-section-label">Coffre-fort</p>
         <button
-          className={`sidebar-item ${selectedFolder === null ? 'active' : ''}`}
+          className={`sidebar-item ${selectedFolder === null && !trashActive ? 'active' : ''}`}
           onClick={() => onSelectFolder(null)}
+          title={tooltip(`Coffre-fort (${passwordCount})`)}
         >
           <IconGrid className="sidebar-item-icon" />
-          Tous les mots de passe
+          <span className="sidebar-item-label">Coffre-fort</span>
           <span className="sidebar-count">{passwordCount}</span>
         </button>
 
-        <p className="sidebar-section-label">Dossiers</p>
+        <button
+          className={`sidebar-item ${trashActive ? 'active' : ''}`}
+          onClick={onSelectTrash}
+          title={tooltip('Éléments supprimés')}
+        >
+          <IconDeleted className="sidebar-item-icon" />
+          <span className="sidebar-item-label">Éléments supprimés</span>
+        </button>
+
         {folders.map(folder => (
           <button
             key={folder.id}
-            className={`sidebar-item ${selectedFolder === folder.id ? 'active' : ''}`}
+            className={`sidebar-item ${selectedFolder === folder.id && !trashActive ? 'active' : ''}`}
             onClick={() => onSelectFolder(folder.id)}
+            title={tooltip(folder.name)}
           >
             <IconFolder className="sidebar-item-icon" />
-            {folder.name}
+            <span className="sidebar-item-label">{folder.name}</span>
           </button>
         ))}
       </nav>
 
       <div className="sidebar-footer">
-        <button className="sidebar-item sidebar-logout" onClick={onLogout}>
+        <button
+          className="sidebar-item sidebar-logout"
+          onClick={onLogout}
+          title={tooltip('Se déconnecter')}
+        >
           <IconLogout className="sidebar-item-icon" />
-          Se déconnecter
+          <span className="sidebar-item-label">Se déconnecter</span>
         </button>
       </div>
     </aside>

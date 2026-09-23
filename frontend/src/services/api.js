@@ -97,6 +97,16 @@ export const itemService = {
     return handleResponse(response);
   },
 
+  // Remplacement complet : type, title, folder_id (null = coffre-fort) et data
+  updateItem: async (id, { type, title, folder_id, data }) => {
+    const response = await fetch(`${API_URL}/item/${id}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ type, title, folder_id, data }),
+    });
+    return handleResponse(response);
+  },
+
   deleteItem: async (id) => {
     const response = await fetch(`${API_URL}/item/${id}`, {
       method: 'DELETE',

@@ -2,33 +2,26 @@ import { useState } from 'react';
 import { icons } from '../assets/icons/icons';
 import { itemService } from '../services/api';
 import PasswordField from './PasswordField';
-import { generatePassword, loadGeneratorOptions } from '../utils/generatePassword';
-
-const ITEM_TYPES = [
-  { value: 'password', label: 'Mot de passe' },
-  { value: 'contact', label: 'Contact' },
-];
+import ItemAvatar from './ItemAvatar';
 
 const EMPTY_DATA = {
   password: { login: '', password: '', note: '' },
   contact: { first_name: '', last_name: '', email: '', phone: '' },
 };
 
-// Données de départ d'un nouvel item : un mot de passe est généré d'office (avec les derniers réglages du générateur)
-const initialData = (type) => (
-  type === 'password'
-    ? { ...EMPTY_DATA.password, password: generatePassword(loadGeneratorOptions()) }
-    : EMPTY_DATA[type]
-);
+const ITEM_TYPES = [
+  { value: 'password', label: 'Mot de passe' },
+  { value: 'contact', label: 'Contact' },
+];
 
-export default function VaultModal({ folders, defaultFolder, onClose, onCreated }) {
-  const [step, setStep] = useState(1);
+// item = infos de la liste (title, type, folder_id), data = champs déchiffrés
+export default function EditItemModal({ item, data: initialData, folders, onClose, onSaved }) {
   const [form, setForm] = useState({
-    title: '',
-    type: 'password',
-    folder_id: defaultFolder ? String(defaultFolder) : '',
+    title: item.title,
+    type: item.type,
+    folder_id: item.folder_id ? String(item.folder_id) : '',
   });
-  const [data, setData] = useState(() => initialData('password'));
+  const [data, setData] = useState({ ...EMPTY_DATA[item.type], ...initialData });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,15 +30,10 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
   const set = (key, value) => setForm(f => ({ ...f, [key]: value }));
   const setField = (key, value) => setData(d => ({ ...d, [key]: value }));
 
+  // Revenir au type d'origine restaure les données d'origine, sinon on part de champs vides
   const handleTypeChange = (type) => {
     set('type', type);
-    setData(initialData(type));
-  };
-
-  const handleNext = (e) => {
-    e.preventDefault();
-    setError('');
-    setStep(2);
+    setData(type === item.type ? { ...EMPTY_DATA[type], ...initialData } : EMPTY_DATA[type]);
   };
 
   const handleSubmit = async (e) => {
@@ -59,13 +47,13 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
 
     setIsLoading(true);
     try {
-      const created = await itemService.createItem({
+      const updated = await itemService.updateItem(item.id, {
         type: form.type,
         title: form.title.trim(),
         folder_id: form.folder_id ? Number(form.folder_id) : null,
         data,
       });
-      onCreated?.(created);
+      onSaved?.(updated);
       onClose();
     } catch (err) {
       setError(err.message);
@@ -74,35 +62,41 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
     }
   };
 
-  const typeLabel = ITEM_TYPES.find(t => t.value === form.type).label;
-
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+      <div className="modal modal-edit" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">
-            {step === 1 ? 'Nouvel élément' : `${typeLabel} · ${form.title}`}
-          </h2>
+          <div className="vault-detail-heading">
+            <ItemAvatar item={{ ...item, type: form.type, title: form.title || item.title }} size="lg" />
+            <div>
+              <h2 className="modal-title">Modifier l'élément</h2>
+              <span className="modal-subtitle">
+                {ITEM_TYPES.find(t => t.value === form.type).label}
+              </span>
+            </div>
+          </div>
           <button className="vault-detail-close" onClick={onClose} title="Fermer" aria-label="Fermer">
             <IconClose className="icon-btn" />
           </button>
         </div>
 
-        {step === 1 && (
-          <form onSubmit={handleNext} className="modal-form">
-            <div className="detail-field">
-              <label className="detail-label">Titre *</label>
-              <input
-                className="modal-input"
-                placeholder="ex: GitHub"
-                value={form.title}
-                onChange={e => set('title', e.target.value)}
-                maxLength={255}
-                required
-                autoFocus
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="modal-form">
+          <p className="modal-section-title">Général</p>
 
+          <div className="detail-field">
+            <label className="detail-label">Titre *</label>
+            <input
+              className="modal-input"
+              placeholder="ex: GitHub"
+              value={form.title}
+              onChange={e => set('title', e.target.value)}
+              maxLength={255}
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="modal-row">
             <div className="detail-field">
               <label className="detail-label">Type *</label>
               <select
@@ -129,46 +123,42 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
                 ))}
               </select>
             </div>
+          </div>
 
-            <div className="modal-actions">
-              <button type="button" className="btn-delete" onClick={onClose}>Annuler</button>
-              <button type="submit" className="btn-edit">Suivant</button>
-            </div>
-          </form>
-        )}
+          {form.type === 'password' && (
+            <>
+              <p className="modal-section-title">Identifiants</p>
 
-        {step === 2 && (
-          <form onSubmit={handleSubmit} className="modal-form">
-            {form.type === 'password' && (
-              <>
-                <div className="detail-field">
-                  <label className="detail-label">Identifiant *</label>
-                  <input
-                    className="modal-input"
-                    placeholder="email ou nom d'utilisateur"
-                    value={data.login}
-                    onChange={e => setField('login', e.target.value)}
-                    required
-                    autoFocus
-                  />
-                </div>
+              <div className="detail-field">
+                <label className="detail-label">Identifiant *</label>
+                <input
+                  className="modal-input"
+                  placeholder="email ou nom d'utilisateur"
+                  value={data.login}
+                  onChange={e => setField('login', e.target.value)}
+                  required
+                />
+              </div>
 
-                <PasswordField value={data.password} onChange={value => setField('password', value)} />
+              <PasswordField value={data.password} onChange={value => setField('password', value)} />
 
-                <div className="detail-field">
-                  <label className="detail-label">Note</label>
-                  <textarea
-                    className="modal-input modal-textarea"
-                    placeholder="Note optionnelle..."
-                    value={data.note}
-                    onChange={e => setField('note', e.target.value)}
-                  />
-                </div>
-              </>
-            )}
+              <div className="detail-field">
+                <label className="detail-label">Note</label>
+                <textarea
+                  className="modal-input modal-textarea"
+                  placeholder="Note optionnelle..."
+                  value={data.note}
+                  onChange={e => setField('note', e.target.value)}
+                />
+              </div>
+            </>
+          )}
 
-            {form.type === 'contact' && (
-              <>
+          {form.type === 'contact' && (
+            <>
+              <p className="modal-section-title">Coordonnées</p>
+
+              <div className="modal-row">
                 <div className="detail-field">
                   <label className="detail-label">Prénom</label>
                   <input
@@ -176,7 +166,6 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
                     placeholder="Jean"
                     value={data.first_name}
                     onChange={e => setField('first_name', e.target.value)}
-                    autoFocus
                   />
                 </div>
 
@@ -189,7 +178,9 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
                     onChange={e => setField('last_name', e.target.value)}
                   />
                 </div>
+              </div>
 
+              <div className="modal-row">
                 <div className="detail-field">
                   <label className="detail-label">Email</label>
                   <input
@@ -211,21 +202,27 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
                     onChange={e => setField('phone', e.target.value)}
                   />
                 </div>
-              </>
-            )}
+              </div>
+            </>
+          )}
 
-            {error && <p className="modal-error">{error}</p>}
+          {form.type !== item.type && (
+            <p className="modal-warning">
+              Changer le type remplace les données actuelles de l'élément.
+            </p>
+          )}
 
-            <div className="modal-actions">
-              <button type="button" className="btn-delete" onClick={() => setStep(1)} disabled={isLoading}>
-                Retour
-              </button>
-              <button type="submit" className="btn-edit" disabled={isLoading}>
-                {isLoading ? 'Enregistrement...' : 'Enregistrer'}
-              </button>
-            </div>
-          </form>
-        )}
+          {error && <p className="modal-error">{error}</p>}
+
+          <div className="modal-actions">
+            <button type="button" className="btn-delete" onClick={onClose} disabled={isLoading}>
+              Annuler
+            </button>
+            <button type="submit" className="btn-edit" disabled={isLoading}>
+              {isLoading ? 'Enregistrement...' : 'Mettre à jour'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

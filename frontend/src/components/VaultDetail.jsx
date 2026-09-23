@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { icons } from '../assets/icons/icons';
 import { itemService } from '../services/api';
 import ItemAvatar from './ItemAvatar';
+import ColoredPassword from './ColoredPassword';
 
-export default function VaultDetail({ item, onClose, onDeleted, folders }) {
+export default function VaultDetail({ item, onClose, onEdit, onDeleted, folders }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -58,11 +59,12 @@ export default function VaultDetail({ item, onClose, onDeleted, folders }) {
         <div className="detail-value-row">
           <span className="detail-value">{value}</span>
           <button
-            className={`detail-copy ${copied === key ? 'copied' : ''}`}
+            className={`detail-copy btn-copy-icon ${copied === key ? 'copied' : ''}`}
             onClick={() => copy(value, key)}
+            title={copied === key ? 'Copié' : 'Copier'}
+            aria-label={`Copier ${label.toLowerCase()}`}
           >
             <IconCopy className="icon-sm" />
-            {copied === key ? 'Copié' : 'Copier'}
           </button>
         </div>
       </div>
@@ -77,17 +79,18 @@ export default function VaultDetail({ item, onClose, onDeleted, folders }) {
         <label className="detail-label">Mot de passe</label>
         <div className="detail-value-row">
           <span className="detail-value detail-password">
-            {showPassword ? data.password : '••••••••••••'}
+            {showPassword ? <ColoredPassword value={data.password} /> : '••••••••••••'}
           </span>
           <button className="detail-eye" onClick={() => setShowPassword(v => !v)}>
             {showPassword ? <IconEyeOff className="icon-sm" /> : <IconEye className="icon-sm" />}
           </button>
           <button
-            className={`detail-copy ${copied === 'password' ? 'copied' : ''}`}
+            className={`detail-copy btn-copy-icon ${copied === 'password' ? 'copied' : ''}`}
             onClick={() => copy(data.password, 'password')}
+            title={copied === 'password' ? 'Copié' : 'Copier'}
+            aria-label="Copier le mot de passe"
           >
             <IconCopy className="icon-sm" />
-            {copied === 'password' ? 'Copié' : 'Copier'}
           </button>
         </div>
       </div>
@@ -117,7 +120,7 @@ export default function VaultDetail({ item, onClose, onDeleted, folders }) {
           <ItemAvatar item={item} size="lg" />
           <h2 className="vault-detail-title">{item.title}</h2>
         </div>
-        <button className="vault-detail-close" onClick={onClose}>
+        <button className="vault-detail-close" onClick={onClose} title="Fermer" aria-label="Fermer">
           <IconClose className="icon-btn" />
         </button>
       </div>
@@ -138,7 +141,6 @@ export default function VaultDetail({ item, onClose, onDeleted, folders }) {
 
       {confirmDelete ? (
         <div className="detail-actions detail-confirm">
-          <p className="detail-confirm-text">Supprimer « {item.title} » ?</p>
           <button className="btn-edit" onClick={() => setConfirmDelete(false)} disabled={isDeleting}>
             Annuler
           </button>
@@ -149,13 +151,22 @@ export default function VaultDetail({ item, onClose, onDeleted, folders }) {
         </div>
       ) : (
         <div className="detail-actions">
-          <button className="btn-edit">
+          <button
+            className="btn-edit btn-icon"
+            onClick={() => onEdit?.(data)}
+            disabled={!data}
+            title="Modifier"
+            aria-label="Modifier"
+          >
             <IconEdit className="icon-btn" />
-            Modifier
           </button>
-          <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
+          <button
+            className="btn-delete btn-icon"
+            onClick={() => setConfirmDelete(true)}
+            title="Supprimer"
+            aria-label="Supprimer"
+          >
             <IconTrash className="icon-btn" />
-            Supprimer
           </button>
         </div>
       )}
