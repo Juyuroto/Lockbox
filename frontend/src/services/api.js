@@ -87,4 +87,22 @@ export const itemService = {
     return handleResponse(response);
   },
 
+  // Renvoie uniquement les données déchiffrées de l'item
+  // password: { login, password, note } / contact: { first_name, last_name, email, phone }
+  getItem: async (id) => {
+    const response = await fetch(`${API_URL}/item/${id}`, {
+      method: 'GET',
+      headers: authHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  deleteItem: async (id) => {
+    const response = await fetch(`${API_URL}/item/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    return handleResponse(response);
+  },
+
 };

@@ -139,11 +139,25 @@ func GetItemByIDController(c *gin.Context) {
 	var item models.Item
 
 	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).First(&item).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Password Not Found",})
+		c.JSON(404, gin.H{"error": "Item Not Found",})
 		return
 	}
 
-	c.JSON(200, item)
+	var ciphertext = item.Data
+
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(404, gin.H{"error": "User not found"})
+		return
+	}
+
+	plaintext, err := services.DecryptionAES(ciphertext, user.EncryptionKey)
+	if err != nil {
+    	c.JSON(500, gin.H{"error": "Error decrypting the item"})
+     	return
+	}
+
+	c.JSON(200, json.RawMessage(plaintext))
 }
 
 func UpdateItemController(c *gin.Context) {
@@ -152,19 +166,22 @@ func UpdateItemController(c *gin.Context) {
 
 func DeleteItemController(c *gin.Context) {
 
+	userID := c.MustGet("userID").(uint)
+	
 	id := c.Param("id")
 	var item models.Item
 
-	result := config.DB.First(&item, id)
-
-	if result.Error != nil {
-		c.JSON(400, gin.H{"error": "Password Not Found"})
+	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).First(&item).Error; err != nil {
+		c.JSON(404, gin.H{"error": "Item Not Found",})
 		return
 	}
 
-	config.DB.Delete(&item)
+	if err := config.DB.Delete(&item).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Error deleting the item"})
+		return
+	}
 
-	c.JSON(200, gin.H{"error": "Password Deleted Successfully"})
+	c.JSON(200, gin.H{"message": "Item Deleted Successfully"})
 	
 }
 

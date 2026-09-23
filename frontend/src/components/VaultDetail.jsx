@@ -1,20 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { icons } from '../assets/icons/icons';
+import { itemService } from '../services/api';
+import ItemAvatar from './ItemAvatar';
 
-export default function VaultDetail({ item, onClose, folders }) {
+export default function VaultDetail({ item, onClose, onDeleted, folders }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const IconClose = icons.close;
   const IconFolder = icons.folder;
   const IconCopy = icons.copy;
   const IconEye = icons.eye;
   const IconEyeOff = icons.eyeOff;
-  const IconLink = icons.link;
   const IconEdit = icons.edit;
   const IconTrash = icons.trash;
 
   const folder = folders.find(f => f.id === item.folder_id);
+
+  // Le composant est remonté à chaque changement d'item (key={item.id}),
+  // donc on ne charge qu'une fois les données déchiffrées
+  useEffect(() => {
+    let cancelled = false;
+    itemService.getItem(item.id)
+      .then(res => { if (!cancelled) setData(res); })
+      .catch(err => { if (!cancelled) setError(err.message); });
+    return () => { cancelled = true; };
+  }, [item.id]);
 
   const copy = (value, label) => {
     navigator.clipboard.writeText(value);
@@ -22,10 +37,86 @@ export default function VaultDetail({ item, onClose, folders }) {
     setTimeout(() => setCopied(''), 2000);
   };
 
+  const handleDelete = async () => {
+    setError('');
+    setIsDeleting(true);
+    try {
+      await itemService.deleteItem(item.id);
+      onDeleted?.(item.id);
+    } catch (err) {
+      setError(err.message);
+      setIsDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  const renderField = (label, key, value) => {
+    if (!value) return null;
+    return (
+      <div className="detail-field">
+        <label className="detail-label">{label}</label>
+        <div className="detail-value-row">
+          <span className="detail-value">{value}</span>
+          <button
+            className={`detail-copy ${copied === key ? 'copied' : ''}`}
+            onClick={() => copy(value, key)}
+          >
+            <IconCopy className="icon-sm" />
+            {copied === key ? 'Copié' : 'Copier'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPassword = () => (
+    <>
+      {renderField('Identifiant', 'login', data.login)}
+
+      <div className="detail-field">
+        <label className="detail-label">Mot de passe</label>
+        <div className="detail-value-row">
+          <span className="detail-value detail-password">
+            {showPassword ? data.password : '••••••••••••'}
+          </span>
+          <button className="detail-eye" onClick={() => setShowPassword(v => !v)}>
+            {showPassword ? <IconEyeOff className="icon-sm" /> : <IconEye className="icon-sm" />}
+          </button>
+          <button
+            className={`detail-copy ${copied === 'password' ? 'copied' : ''}`}
+            onClick={() => copy(data.password, 'password')}
+          >
+            <IconCopy className="icon-sm" />
+            {copied === 'password' ? 'Copié' : 'Copier'}
+          </button>
+        </div>
+      </div>
+
+      {data.note && (
+        <div className="detail-field">
+          <label className="detail-label">Note</label>
+          <p className="detail-note">{data.note}</p>
+        </div>
+      )}
+    </>
+  );
+
+  const renderContact = () => (
+    <>
+      {renderField('Prénom', 'first_name', data.first_name)}
+      {renderField('Nom', 'last_name', data.last_name)}
+      {renderField('Email', 'email', data.email)}
+      {renderField('Téléphone', 'phone', data.phone)}
+    </>
+  );
+
   return (
     <div className="vault-detail">
       <div className="vault-detail-header">
-        <h2 className="vault-detail-title">{item.title}</h2>
+        <div className="vault-detail-heading">
+          <ItemAvatar item={item} size="lg" />
+          <h2 className="vault-detail-title">{item.title}</h2>
+        </div>
         <button className="vault-detail-close" onClick={onClose}>
           <IconClose className="icon-btn" />
         </button>
@@ -39,69 +130,35 @@ export default function VaultDetail({ item, onClose, folders }) {
       )}
 
       <div className="detail-fields">
-        <div className="detail-field">
-          <label className="detail-label">Identifiant</label>
-          <div className="detail-value-row">
-            <span className="detail-value">{item.login}</span>
-            <button
-              className={`detail-copy ${copied === 'login' ? 'copied' : ''}`}
-              onClick={() => copy(item.login, 'login')}
-            >
-              <IconCopy className="icon-sm" />
-              {copied === 'login' ? 'Copié' : 'Copier'}
-            </button>
-          </div>
-        </div>
-
-        <div className="detail-field">
-          <label className="detail-label">Mot de passe</label>
-          <div className="detail-value-row">
-            <span className="detail-value detail-password">
-              {showPassword ? item.password : '••••••••••••'}
-            </span>
-            <button className="detail-eye" onClick={() => setShowPassword(v => !v)}>
-              {showPassword ? <IconEyeOff className="icon-sm" /> : <IconEye className="icon-sm" />}
-            </button>
-            <button
-              className={`detail-copy ${copied === 'password' ? 'copied' : ''}`}
-              onClick={() => copy(item.password, 'password')}
-            >
-              <IconCopy className="icon-sm" />
-              {copied === 'password' ? 'Copié' : 'Copier'}
-            </button>
-          </div>
-        </div>
-
-        {item.url && (
-          <div className="detail-field">
-            <label className="detail-label">Site web</label>
-            <div className="detail-value-row">
-              <a href={item.url} target="_blank" rel="noopener noreferrer" className="detail-link">
-                {item.url}
-              </a>
-              <IconLink className="icon-sm icon-muted" />
-            </div>
-          </div>
-        )}
-
-        {item.note && (
-          <div className="detail-field">
-            <label className="detail-label">Note</label>
-            <p className="detail-note">{item.note}</p>
-          </div>
-        )}
+        {error && <p className="modal-error">{error}</p>}
+        {!data && !error && <p className="detail-note">Chargement...</p>}
+        {data && item.type === 'password' && renderPassword()}
+        {data && item.type === 'contact' && renderContact()}
       </div>
 
-      <div className="detail-actions">
-        <button className="btn-edit">
-          <IconEdit className="icon-btn" />
-          Modifier
-        </button>
-        <button className="btn-delete">
-          <IconTrash className="icon-btn" />
-          Supprimer
-        </button>
-      </div>
+      {confirmDelete ? (
+        <div className="detail-actions detail-confirm">
+          <p className="detail-confirm-text">Supprimer « {item.title} » ?</p>
+          <button className="btn-edit" onClick={() => setConfirmDelete(false)} disabled={isDeleting}>
+            Annuler
+          </button>
+          <button className="btn-delete btn-delete-confirm" onClick={handleDelete} disabled={isDeleting}>
+            <IconTrash className="icon-btn" />
+            {isDeleting ? 'Suppression...' : 'Supprimer'}
+          </button>
+        </div>
+      ) : (
+        <div className="detail-actions">
+          <button className="btn-edit">
+            <IconEdit className="icon-btn" />
+            Modifier
+          </button>
+          <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
+            <IconTrash className="icon-btn" />
+            Supprimer
+          </button>
+        </div>
+      )}
     </div>
   );
 }

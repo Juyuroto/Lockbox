@@ -24,7 +24,7 @@ func GenerateVerificationToken(email string) (string, error) { // génère un JW
     claims := jwt.MapClaims{
         "email":   email,
         "purpose": "email_verification",
-        "exp":     time.Now().Add(time.Hour * 2).Unix(),
+        "exp":     time.Now().Add(time.Minute * 25).Unix(),
     }
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
     return token.SignedString([]byte(os.Getenv("JWT_SECRET_2")))

@@ -79,8 +79,13 @@ export default function Dashboard() {
           />
           {selectedItem && (
             <VaultDetail
+              key={selectedItem.id}
               item={selectedItem}
               onClose={() => setSelectedItem(null)}
+              onDeleted={id => {
+                setPasswords(p => p.filter(i => i.id !== id));
+                setSelectedItem(null);
+              }}
               folders={folders}
             />
           )}
