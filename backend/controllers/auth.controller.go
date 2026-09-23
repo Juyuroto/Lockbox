@@ -85,3 +85,5 @@ func RefreshTokenLogoutController(c *gin.Context) {
 
     c.JSON(200, gin.H{"message": "Logged out successfully"})
 }
+
+// 400 StatusBadRequest - 200 StatusOK - 404 StatusNotFound - 500 StatusInternalServerError - 401 StatusUnauthorized - 409 StatusConflict - 201 StatusCreated

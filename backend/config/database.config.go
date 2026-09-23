@@ -29,7 +29,7 @@ func DatbaseConnexion() {
 		log.Fatal("Impossible de se connecter à la base de données :", err)
 	}
 
-	err = db.AutoMigrate(&models.User{}, &models.Vault{}, &models.Folder{}, &models.Password{}, &models.RefreshToken{})
+	err = db.AutoMigrate(&models.User{}, &models.Vault{}, &models.Folder{}, &models.Item{}, &models.RefreshToken{})
 
 	if err != nil {
 		log.Fatal("Erreur lors de la migration des tables : ", err)

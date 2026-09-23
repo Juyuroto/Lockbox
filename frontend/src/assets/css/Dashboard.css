@@ -641,6 +641,12 @@
   min-height: 80px;
 }
 
+.modal-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
 .modal-actions {
   display: flex;
   gap: 0.75rem;

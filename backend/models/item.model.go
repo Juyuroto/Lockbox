@@ -2,26 +2,28 @@ package models
 
 import "gorm.io/gorm"
 
-type Folder struct {
+type Item struct {
 	gorm.Model
-	Name      	string     	`gorm:"not null" json:"name"`
-	Passwords 	[]Password 	`json:"-"`
-	UserID    	uint       	`gorm:"not null" json:"user_id"`
-	VaultID 	uint 		`gorm:"not null" json:"vault_id"`
-    User      	User       	`json:"-"`
+	Type		string		`gorm:"not null" json:"type"`
+	Title		string		`gorm:"not null" json:"title"`
+	Data		string		`gorm:"type:text;not null" json:"-"`
+	UserID		uint		`gorm:"not null" json:"user_id"`
+    User		User		`json:"-"`
+    VaultID		uint		`gorm:"not null" json:"vault_id"`
+
+	FolderID 	*uint		`json:"folder_id"`
+	Folder		Folder		`json:"-"`
 }
 
-type Password struct {
-	gorm.Model
-	Title    	string 		`gorm:"not null" json:"title"`
-	Type	 	string		`gorm:"not null" json:"type"`
-	Login	 	string		`gorm:"not null" json:"login"`
-	Password 	string 		`gorm:"not null" json:"password"`
-	Note	 	string		`json:"note"`
-	UserID   	uint   		`gorm:"not null" json:"user_id"`
-    User     	User   		`json:"-"`
-    VaultID 	uint 		`gorm:"not null" json:"vault_id"`
+type PasswordData struct {
+	Login		string 		`json:"login" binding:"required"`
+	Password	string 		`json:"password" binding:"required"`
+	Note		string 		`json:"note"`
+}
 
-	FolderID 	*uint   	`json:"folder_id"`
-	Folder   	Folder 		`json:"folder"`
+type ContactData struct {
+	FirstName 	string 		`json:"first_name"`
+	LastName  	string 		`json:"last_name"`
+	Email     	string 		`json:"email" binding:"omitempty,email"`
+	Phone     	string 		`json:"phone"`
 }

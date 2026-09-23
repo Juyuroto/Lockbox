@@ -33,8 +33,7 @@ export default function Dashboard() {
 
   const filtered = passwords.filter(p => {
     const matchFolder = selectedFolder ? p.folder_id === selectedFolder : true;
-    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.login.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
     return matchFolder && matchSearch;
   });
 
@@ -91,7 +90,9 @@ export default function Dashboard() {
       {showModal && (
         <VaultModal
           folders={folders}
+          defaultFolder={selectedFolder}
           onClose={() => setShowModal(false)}
+          onCreated={item => setPasswords(p => [...p, item])}
         />
       )}
     </div>

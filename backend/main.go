@@ -19,7 +19,7 @@ func main() {
 	router.Use(middlewares.CorsMiddleware())
 
 	routes.UserRoute(router)
-	routes.PasswordRoute(router)
+	routes.ItemRoute(router)
 	routes.FolderRoute(router)
 	routes.VaultRoute(router)
 

@@ -25,7 +25,7 @@ func GetFolderNumberPasswordController(c *gin.Context) {
     id := c.Param("id")
     var count int64
 
-    result := config.DB.Model(&models.Password{}).Where("folder_id = ?", id).Count(&count)
+    result := config.DB.Model(&models.Item{}).Where("folder_id = ?", id).Count(&count)
     if result.Error != nil {
         c.JSON(500, gin.H{"error": "Erreur lors du décompte"})
         return
@@ -109,3 +109,5 @@ func UpdateFolderController(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "Folder Updated Successfully"})
 	
 }
+
+// 400 StatusBadRequest - 200 StatusOK - 404 StatusNotFound - 500 StatusInternalServerError - 401 StatusUnauthorized - 409 StatusConflict - 201 StatusCreated

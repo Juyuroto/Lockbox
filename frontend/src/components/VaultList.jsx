@@ -37,7 +37,7 @@ export default function VaultList({ items, selectedItem, onSelect, folders }) {
             </div>
             <div className="vault-item-info">
               <span className="vault-item-title">{item.title}</span>
-              <span className="vault-item-login">{item.login}</span>
+              <span className="vault-item-login">{item.type === 'contact' ? 'Contact' : 'Mot de passe'}</span>
             </div>
             {folder && (
               <span className="vault-item-folder">{folder.name}</span>

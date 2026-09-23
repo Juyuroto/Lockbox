@@ -66,13 +66,13 @@ func CreateUserCompleteController(c *gin.Context) {
     }
 
     if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(400, gin.H{"error": "Token invalide ou expiré"})
+        c.JSON(400, gin.H{"error": "Invalid JSON data"})
         return
     }
 
     email, err := services.VerifyVerificationToken(input.Token)
     if err != nil {
-        c.JSON(401, gin.H{"error": "Invalid JSON data"})
+        c.JSON(401, gin.H{"error": "Token invalide ou expiré"})
         return
     }
     
@@ -221,3 +221,5 @@ func UpdateUserController(c *gin.Context) {
 	})
 	
 }
+
+// 400 StatusBadRequest - 200 StatusOK - 404 StatusNotFound - 500 StatusInternalServerError - 401 StatusUnauthorized - 409 StatusConflict - 201 StatusCreated

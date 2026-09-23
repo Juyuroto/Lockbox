@@ -61,6 +61,29 @@ export const vaultService = {
       method: 'GET',
       headers: authHeaders(),
     });
+    const data = await handleResponse(response);
+    // gorm.Model renvoie "ID" en majuscules, on normalise en "id"
+    return {
+      ...data,
+      folders: (data.folders ?? []).map(f => ({ ...f, id: f.ID })),
+      passwords: (data.passwords ?? []).map(p => ({ ...p, id: p.ID })),
+    };
+  },
+
+};
+
+// ── Items ─────────────────────────────────────────────────
+
+export const itemService = {
+
+  // type: 'password' | 'contact'
+  // data: { login, password, note } ou { first_name, last_name, email, phone }
+  createItem: async ({ type, title, folder_id, data }) => {
+    const response = await fetch(`${API_URL}/item`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ type, title, folder_id, data }),
+    });
     return handleResponse(response);
   },
 
