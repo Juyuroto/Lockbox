@@ -11,6 +11,7 @@ import (
 	"lockbox/config"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func GetUserController(c *gin.Context) {
@@ -93,16 +94,24 @@ func CreateUserCompleteController(c *gin.Context) {
         return
     }
 
-    user := models.User{
+    user := models.User {
     	Email:			email,
         Password:		hashed,
         EncryptionKey:	EncryptionKey,
     }
 
-    if err := config.DB.Create(&user).Error; err != nil {
-        c.JSON(500, gin.H{"error": "Unable To Create User"})
-        return
-    }
+    err = config.DB.Transaction(func(tx *gorm.DB) error {
+        if err := tx.Create(&user).Error; err != nil {
+            return err
+        }
+    
+        vault := models.Vault{UserID: user.ID}
+        if err := tx.Create(&vault).Error; err != nil {
+            return err
+        }
+    
+        return nil
+    })
 
     c.JSON(200, gin.H{"message": "User created successfully"})
 }

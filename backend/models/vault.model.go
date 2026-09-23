@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 type Vault struct {
     gorm.Model
-    UserID    uint       `gorm:"not null" json:"user_id"`
+    UserID    uint       `gorm:"unique; not null" json:"user_id"`
     User      User       `json:"-"`
     Folders   []Folder   `json:"folders"`
     Passwords []Password `json:"passwords"`
