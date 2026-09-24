@@ -28,7 +28,7 @@ export default function Signup() {
 
   if (sent) {
     return (
-      <AuthLayout>
+      <AuthLayout variant="register">
         <div className="signup-card">
           <div className="signup-header">
             <h1 className="signup-title">Vérifie ta boîte mail</h1>
@@ -47,7 +47,7 @@ export default function Signup() {
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout variant="register">
       <div className="signup-card">
         <div className="signup-header">
           <h1 className="signup-title">Créer un compte</h1>

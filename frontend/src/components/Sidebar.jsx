@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { icons } from '../assets/icons/icons';
+import LogoIcon from '../assets/logo/lockbox-icon.svg?react';
 
 const STORAGE_KEY = 'lockbox_sidebar_collapsed';
 
@@ -12,12 +13,13 @@ function loadCollapsed() {
   }
 }
 
-export default function Sidebar({ folders, selectedFolder, onSelectFolder, trashActive, onSelectTrash, onLogout, passwordCount }) {
+export default function Sidebar({ folders, selectedFolder, onSelectFolder, view, onSelectTrash, onSelectSettings, onLogout, passwordCount }) {
   const [collapsed, setCollapsed] = useState(loadCollapsed);
 
   const IconGrid = icons.grid;
   const IconFolder = icons.folder;
   const IconDeleted = icons.deleteOutline;
+  const IconSettings = icons.settings;
   const IconLogout = icons.logout;
   const IconChevron = icons.downFill;
 
@@ -38,7 +40,10 @@ export default function Sidebar({ folders, selectedFolder, onSelectFolder, trash
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
-        <span className="sidebar-title">Lockbox</span>
+        <span className="sidebar-brand">
+          <LogoIcon className="sidebar-logo" aria-hidden="true" />
+          <span className="sidebar-title">Lockbox</span>
+        </span>
         <button
           className="sidebar-toggle"
           onClick={toggle}
@@ -52,7 +57,7 @@ export default function Sidebar({ folders, selectedFolder, onSelectFolder, trash
 
       <nav className="sidebar-nav">
         <button
-          className={`sidebar-item ${selectedFolder === null && !trashActive ? 'active' : ''}`}
+          className={`sidebar-item ${view === 'vault' && selectedFolder === null ? 'active' : ''}`}
           onClick={() => onSelectFolder(null)}
           title={tooltip(`Coffre-fort (${passwordCount})`)}
         >
@@ -62,7 +67,7 @@ export default function Sidebar({ folders, selectedFolder, onSelectFolder, trash
         </button>
 
         <button
-          className={`sidebar-item ${trashActive ? 'active' : ''}`}
+          className={`sidebar-item ${view === 'trash' ? 'active' : ''}`}
           onClick={onSelectTrash}
           title={tooltip('Éléments supprimés')}
         >
@@ -70,10 +75,23 @@ export default function Sidebar({ folders, selectedFolder, onSelectFolder, trash
           <span className="sidebar-item-label">Éléments supprimés</span>
         </button>
 
+        <div className="sidebar-separator" role="separator" />
+
+        <button
+          className={`sidebar-item ${view === 'settings' ? 'active' : ''}`}
+          onClick={onSelectSettings}
+          title={tooltip('Paramètres')}
+        >
+          <IconSettings className="sidebar-item-icon sidebar-settings-icon" />
+          <span className="sidebar-item-label">Paramètres</span>
+        </button>
+
+        {folders.length > 0 && <div className="sidebar-separator" role="separator" />}
+
         {folders.map(folder => (
           <button
             key={folder.id}
-            className={`sidebar-item ${selectedFolder === folder.id && !trashActive ? 'active' : ''}`}
+            className={`sidebar-item ${view === 'vault' && selectedFolder === folder.id ? 'active' : ''}`}
             onClick={() => onSelectFolder(folder.id)}
             title={tooltip(folder.name)}
           >

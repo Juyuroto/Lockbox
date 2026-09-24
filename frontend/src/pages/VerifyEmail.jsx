@@ -44,7 +44,7 @@ export default function VerifyEmail() {
 
   if (invalidToken) {
     return (
-      <AuthLayout>
+      <AuthLayout variant="register">
         <div className="verify-card">
           <div className="verify-header">
             <h1 className="verify-title">Lien invalide ou expiré</h1>
@@ -62,7 +62,7 @@ export default function VerifyEmail() {
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout variant="register">
       <div className="verify-card">
         <div className="verify-header">
           <h1 className="verify-title">Choisissez votre mot de passe</h1>

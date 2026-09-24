@@ -13,6 +13,7 @@ import IconGrid from './items-grid.svg?react';
 import IconLink from './link.svg?react';
 import IconLogout from './logout.svg?react';
 import IconSearch from './search.svg?react';
+import IconSettings from './settings.svg?react';
 import IconTrash from './trash.svg?react';
 
 export const icons = {
@@ -31,5 +32,6 @@ export const icons = {
   link: IconLink,
   logout: IconLogout,
   search: IconSearch,
+  settings: IconSettings,
   trash: IconTrash,
 };

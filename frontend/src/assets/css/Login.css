@@ -64,14 +64,52 @@
   gap: 2rem;
   max-width: 680px;
   width: 100%;
+  outline: none;
+}
+
+.carousel-content:focus-visible {
+  outline: 2px solid var(--color-lockbox-600);
+  outline-offset: 12px;
+  border-radius: 16px;
+}
+
+.carousel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .carousel-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--color-lockbox-100);
   letter-spacing: -0.02em;
-  align-self: flex-start;
+}
+
+/* Le cadenas n'occupe que le centre de l'icône : on l'agrandit et on rogne ses marges transparentes.
+   Il est remonté de 2px (marges haut/bas asymétriques) : son corps est dans la moitié basse,
+   centré géométriquement il paraît plus bas que le texte. */
+.carousel-logo-icon {
+  width: 38px;
+  height: 38px;
+  margin: -8px -4px -4px -8px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.carousel-counter {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--color-lockbox-600);
+  letter-spacing: 0.05em;
+}
+
+.carousel-counter-current {
+  color: var(--color-lockbox-200);
 }
 
 .carousel-slides {
@@ -88,14 +126,15 @@
   align-items: center;
   gap: 1.25rem;
   opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0s linear 0.5s;
   pointer-events: none;
 }
 
 .carousel-slide.active {
   opacity: 1;
-  transform: translateY(0);
+  visibility: visible;
+  transition: opacity 0.5s ease, visibility 0s;
   pointer-events: auto;
   position: relative;
 }
@@ -106,37 +145,17 @@
   background: var(--color-lockbox-900);
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-shadow: 0 24px 60px -24px rgba(0,0,0,0.6);
   overflow: hidden;
 }
 
-.illustration-box {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  width: 55%;
-}
-
-.illustration-line {
-  height: 8px;
-  background: var(--color-lockbox-700);
-  border-radius: 4px;
+.carousel-image {
   width: 100%;
-}
-
-.illustration-line.short {
-  width: 55%;
-  background: var(--color-lockbox-600);
-}
-
-.illustration-dot {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--color-lockbox-500);
-  margin-top: 0.2rem;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  user-select: none;
 }
 
 .carousel-title {
@@ -155,6 +174,72 @@
   text-align: center;
   margin: 0;
   line-height: 1.65;
+  max-width: 440px;
+}
+
+/* Animations d'entrée : l'image glisse dans le sens de navigation, le texte suit */
+.carousel-slide.active .carousel-image {
+  animation: carousel-image-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.carousel-slide.active.prev .carousel-image {
+  animation-name: carousel-image-in-prev;
+}
+
+.carousel-slide.active .carousel-title {
+  animation: carousel-text-in 0.5s ease 0.12s both;
+}
+
+.carousel-slide.active .carousel-desc {
+  animation: carousel-text-in 0.5s ease 0.22s both;
+}
+
+@keyframes carousel-image-in {
+  from { opacity: 0; transform: translateX(28px) scale(1.04); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes carousel-image-in-prev {
+  from { opacity: 0; transform: translateX(-28px) scale(1.04); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes carousel-text-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Contrôles */
+.carousel-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.carousel-arrow {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: var(--color-lockbox-300);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.carousel-arrow:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.14);
+  color: #fff;
+}
+
+.carousel-arrow:focus-visible,
+.carousel-dot:focus-visible {
+  outline: 2px solid var(--color-lockbox-400);
+  outline-offset: 3px;
 }
 
 .carousel-dots {
@@ -164,20 +249,56 @@
 }
 
 .carousel-dot {
+  position: relative;
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: 3px;
   border: none;
   background: var(--color-lockbox-700);
   cursor: pointer;
-  transition: background 0.2s ease, width 0.2s ease;
+  overflow: hidden;
+  transition: background 0.2s ease, width 0.3s ease;
   padding: 0;
 }
 
+.carousel-dot:hover {
+  background: var(--color-lockbox-500);
+}
+
 .carousel-dot.active {
-  background: var(--color-lockbox-300);
-  width: 20px;
-  border-radius: 3px;
+  width: 36px;
+  background: var(--color-lockbox-700);
+}
+
+/* Barre de progression : la fin de l'animation déclenche la slide suivante */
+.carousel-dot-progress {
+  position: absolute;
+  inset: 0;
+  background: var(--color-lockbox-200);
+  transform-origin: left;
+  animation: carousel-progress var(--carousel-interval, 8000ms) linear forwards;
+}
+
+.carousel-content.paused .carousel-dot-progress {
+  animation-play-state: paused;
+}
+
+@keyframes carousel-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel-slide,
+  .carousel-slide.active {
+    transition: none;
+  }
+
+  .carousel-slide.active .carousel-image,
+  .carousel-slide.active .carousel-title,
+  .carousel-slide.active .carousel-desc {
+    animation: none;
+  }
 }
 
 /* ── Login card ── */
@@ -250,13 +371,4 @@
 
 .auth-link:hover {
   text-decoration: underline;
-}
-
-.carousel-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  border-radius: 13px;
-  display: block;
 }

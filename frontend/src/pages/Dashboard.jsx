@@ -14,8 +14,8 @@ export default function Dashboard() {
   const [folders, setFolders] = useState([]);
   const [passwords, setPasswords] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState(null);
-  // Vue « Éléments supprimés » (historique et récupération à venir)
-  const [showTrash, setShowTrash] = useState(false);
+  // Vue affichée : 'vault' (éléments), 'trash' (supprimés, à venir) ou 'settings' (à venir)
+  const [view, setView] = useState('vault');
   const [selectedItem, setSelectedItem] = useState(null);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -59,11 +59,15 @@ export default function Dashboard() {
         selectedFolder={selectedFolder}
         onSelectFolder={id => {
           setSelectedFolder(id);
-          setShowTrash(false);
+          setView('vault');
         }}
-        trashActive={showTrash}
+        view={view}
         onSelectTrash={() => {
-          setShowTrash(true);
+          setView('trash');
+          setSelectedItem(null);
+        }}
+        onSelectSettings={() => {
+          setView('settings');
           setSelectedItem(null);
         }}
         onLogout={handleLogout}
@@ -94,14 +98,23 @@ export default function Dashboard() {
         </div>
 
         <div className="dashboard-content">
-          {showTrash ? (
+          {view === 'trash' && (
             <div className="vault-empty">
               <p className="vault-empty-title">Éléments supprimés</p>
               <p className="vault-empty-sub">
                 L'historique des suppressions et la récupération seront bientôt disponibles.
               </p>
             </div>
-          ) : (
+          )}
+          {view === 'settings' && (
+            <div className="vault-empty">
+              <p className="vault-empty-title">Paramètres</p>
+              <p className="vault-empty-sub">
+                Les paramètres du compte seront bientôt disponibles.
+              </p>
+            </div>
+          )}
+          {view === 'vault' && (
             <VaultList
               items={filtered}
               selectedItem={selectedItem}
@@ -109,7 +122,7 @@ export default function Dashboard() {
               folders={folders}
             />
           )}
-          {!showTrash && selectedItem && (
+          {view === 'vault' && selectedItem && (
             <VaultDetail
               key={`${selectedItem.id}-${detailVersion}`}
               item={selectedItem}

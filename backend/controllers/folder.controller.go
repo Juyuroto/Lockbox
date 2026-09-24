@@ -8,61 +8,63 @@ import (
 )
 
 func GetFolderByIDController(c *gin.Context) {
+	
+}
+
+func GetFolderNumberItemController(c *gin.Context) {
+	
+}
+
+func GetFolderItemController(c *gin.Context) {
+	userID := c.MustGet("userID").(uint)
+
 	id := c.Param("id")
 	var folder models.Folder
 
-	result := config.DB.First(&folder, id)
-	if result.Error != nil {
+	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).First(&folder).Error; err != nil {
 		c.JSON(404, gin.H{"error": "Folder Not Found",})
 		return
 	}
 
-	c.JSON(200, folder)
-
-}
-
-func GetFolderNumberPasswordController(c *gin.Context) {
-    id := c.Param("id")
-    var count int64
-
-    result := config.DB.Model(&models.Item{}).Where("folder_id = ?", id).Count(&count)
-    if result.Error != nil {
-        c.JSON(500, gin.H{"error": "Erreur lors du décompte"})
-        return
-    }
-
-    c.JSON(200, gin.H{"count": count})
-}
-
-func GetFolderPasswordsController(c *gin.Context) {
+	var items []models.Item
 	
+	if err := config.DB.Where("folder_id = ? AND user_id = ?", id, userID).Find(&items).Error; err != nil {
+	    c.JSON(500, gin.H{"error": "Error fetching items"})
+	    return
+	}
+
+	c.JSON(200, items)
 }
 
 func CreateFolderController(c *gin.Context) {
 
 	var input struct {
-		Name string `json:"name" binding:"required"`
+		Name 		string 		`json:"name" binding:"required"`
+		ParentID	*uint		`json:"parent_id"`
     }
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(500, gin.H{"error": "Invalid Request Data"})
+    if err := c.ShouldBindJSON(&input); err != nil {
+   		c.JSON(400, gin.H{"error": "Invalid Request Data",})
 		return
-	}
-
-	folder := models.Folder{
-        Name: input.Name,
     }
 
-	if err := config.DB.Create(&folder).Error; err != nil {
-		c.JSON(500, gin.H{"error": "Failed To Create Folder"})
-		return
-	}
+    userID := c.MustGet("userID").(uint)
 
-	c.JSON(201, gin.H{
-        "message": "Folder Created Successfully",
-        "data":    folder,
-    })
-	
+    var vault models.Vault
+
+    if err := config.DB.Where("user_id = ?", userID).First(&vault).Error; err != nil {
+    	c.JSON(500, gin.H{"error": "Error fetching id"})
+     	return
+    }
+
+    if input.ParentID != nil {
+  		var folder models.Folder
+		if err := config.DB.Where("id = ? AND user_id = ? AND vault_id = ?", *input.ParentID, userID, vault.ID).First(&folder).Error; err != nil {
+			c.JSON(404, gin.H{"error": "Folder not found"})
+			return
+		}
+    }
+    
 }
 
 func DeleteFolderController(c *gin.Context) {

@@ -29,7 +29,7 @@ func CreateItemController(c *gin.Context) {
 	var vault models.Vault
 
 	if err := config.DB.Where("user_id = ?", userID).First(&vault).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Vault Not Found",})
+		c.JSON(404, gin.H{"error": "Vault Not Found"})
 		return
 	}
 
