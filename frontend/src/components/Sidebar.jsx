@@ -4,7 +4,6 @@ import LogoIcon from '../assets/logo/lockbox-icon.svg?react';
 
 const STORAGE_KEY = 'lockbox_sidebar_collapsed';
 
-// L'état réduit/agrandi est gardé dans le navigateur
 function loadCollapsed() {
   try {
     return localStorage.getItem(STORAGE_KEY) === 'true';
@@ -13,11 +12,10 @@ function loadCollapsed() {
   }
 }
 
-export default function Sidebar({ folders, selectedFolder, onSelectFolder, view, onSelectTrash, onSelectSettings, onLogout, passwordCount }) {
+export default function Sidebar({ view, onSelectVault, onSelectTrash, onSelectSettings, onLogout, passwordCount }) {
   const [collapsed, setCollapsed] = useState(loadCollapsed);
 
   const IconGrid = icons.grid;
-  const IconFolder = icons.folder;
   const IconDeleted = icons.deleteOutline;
   const IconSettings = icons.settings;
   const IconLogout = icons.logout;
@@ -28,13 +26,11 @@ export default function Sidebar({ folders, selectedFolder, onSelectFolder, view,
       try {
         localStorage.setItem(STORAGE_KEY, String(!c));
       } catch {
-        // stockage indisponible : l'état reste valable pour la session
       }
       return !c;
     });
   };
 
-  // En mode réduit, le texte est masqué : la bulle au survol donne le nom
   const tooltip = (label) => (collapsed ? label : undefined);
 
   return (
@@ -57,8 +53,8 @@ export default function Sidebar({ folders, selectedFolder, onSelectFolder, view,
 
       <nav className="sidebar-nav">
         <button
-          className={`sidebar-item ${view === 'vault' && selectedFolder === null ? 'active' : ''}`}
-          onClick={() => onSelectFolder(null)}
+          className={`sidebar-item ${view === 'vault' ? 'active' : ''}`}
+          onClick={onSelectVault}
           title={tooltip(`Coffre-fort (${passwordCount})`)}
         >
           <IconGrid className="sidebar-item-icon" />
@@ -85,20 +81,6 @@ export default function Sidebar({ folders, selectedFolder, onSelectFolder, view,
           <IconSettings className="sidebar-item-icon sidebar-settings-icon" />
           <span className="sidebar-item-label">Paramètres</span>
         </button>
-
-        {folders.length > 0 && <div className="sidebar-separator" role="separator" />}
-
-        {folders.map(folder => (
-          <button
-            key={folder.id}
-            className={`sidebar-item ${view === 'vault' && selectedFolder === folder.id ? 'active' : ''}`}
-            onClick={() => onSelectFolder(folder.id)}
-            title={tooltip(folder.name)}
-          >
-            <IconFolder className="sidebar-item-icon" />
-            <span className="sidebar-item-label">{folder.name}</span>
-          </button>
-        ))}
       </nav>
 
       <div className="sidebar-footer">

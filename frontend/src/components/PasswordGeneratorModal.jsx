@@ -18,7 +18,6 @@ const CHARSET_OPTIONS = [
 export default function PasswordGeneratorModal({ onClose, onUse }) {
   const [options, setOptions] = useState(loadGeneratorOptions);
   const [password, setPassword] = useState(() => generatePassword(loadGeneratorOptions()));
-  // Masqué par défaut : seul l'œil affiche le mot de passe
   const [showPassword, setShowPassword] = useState(false);
   const { generate, isGenerating } = usePasswordGenerator(setPassword);
 
@@ -106,7 +105,6 @@ export default function PasswordGeneratorModal({ onClose, onUse }) {
                   <input
                     type="checkbox"
                     checked={options[o.key]}
-                    // Au moins un jeu de caractères doit rester coché
                     disabled={options[o.key] && enabledCount === 1}
                     onChange={e => update(o.key, e.target.checked)}
                   />

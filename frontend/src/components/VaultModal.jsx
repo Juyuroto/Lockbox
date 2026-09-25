@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { icons } from '../assets/icons/icons';
 import { itemService } from '../services/api';
+import { flattenFolders } from '../utils/folders';
 import PasswordField from './PasswordField';
 import { generatePassword, loadGeneratorOptions } from '../utils/generatePassword';
 
@@ -14,7 +15,6 @@ const EMPTY_DATA = {
   contact: { first_name: '', last_name: '', email: '', phone: '' },
 };
 
-// Données de départ d'un nouvel item : un mot de passe est généré d'office (avec les derniers réglages du générateur)
 const initialData = (type) => (
   type === 'password'
     ? { ...EMPTY_DATA.password, password: generatePassword(loadGeneratorOptions()) }
@@ -124,8 +124,10 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
                 onChange={e => set('folder_id', e.target.value)}
               >
                 <option value="">Coffre-fort</option>
-                {folders.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
+                {flattenFolders(folders).map(f => (
+                  <option key={f.id} value={f.id}>
+                    {'\u00A0\u00A0'.repeat(f.depth)}{f.name}
+                  </option>
                 ))}
               </select>
             </div>

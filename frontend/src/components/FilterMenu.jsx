@@ -23,7 +23,6 @@ export default function FilterMenu({ filters, onChange }) {
   const IconFilter = icons.filter;
   const isActive = filters.type !== DEFAULT_FILTERS.type || filters.sort !== DEFAULT_FILTERS.sort;
 
-  // Ferme le menu au clic à l'extérieur ou avec Échap
   useEffect(() => {
     if (!open) return;
     const onClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };

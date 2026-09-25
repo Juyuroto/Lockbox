@@ -7,6 +7,7 @@ import(
 	"lockbox/config"
 	
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func RefreshTokenController(c *gin.Context) {
@@ -47,9 +48,32 @@ func RefreshTokenController(c *gin.Context) {
         return
     }
 
+    newRefreshToken, err := services.GenerateRefreshToken()
+    if err != nil {
+        c.JSON(500, gin.H{"error": "Error generating refresh token"})
+        return
+    }
+
+    err = config.DB.Transaction(func(tx *gorm.DB) error {
+        if err := tx.Model(&token).Update("revoked", true).Error; err != nil {
+            return err
+        }
+        return tx.Create(&models.RefreshToken{
+            UserID:    user.ID,
+            Token:     newRefreshToken,
+            ExpiresAt: time.Now().Add(services.RefreshTokenLifetime),
+            Revoked:   false,
+        }).Error
+    })
+    if err != nil {
+        c.JSON(500, gin.H{"error": "Error saving refresh token"})
+        return
+    }
+
     c.JSON(200, gin.H{
     	"message": "New Token",
      	"token": newToken,
+    	"refresh_token": newRefreshToken,
     	"user": gin.H{
         	"id": user.ID,
         	"email": user.Email,

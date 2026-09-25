@@ -3,6 +3,12 @@ import { icons } from '../assets/icons/icons';
 import { itemService } from '../services/api';
 import ItemAvatar from './ItemAvatar';
 import ColoredPassword from './ColoredPassword';
+import MaskedPassword from './MaskedPassword';
+import { getFolderPath } from '../utils/folders';
+
+const formatDate = (value) => new Date(value).toLocaleDateString('fr-FR', {
+  day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+});
 
 export default function VaultDetail({ item, onClose, onEdit, onDeleted, folders }) {
   const [data, setData] = useState(null);
@@ -22,8 +28,6 @@ export default function VaultDetail({ item, onClose, onEdit, onDeleted, folders 
 
   const folder = folders.find(f => f.id === item.folder_id);
 
-  // Le composant est remonté à chaque changement d'item (key={item.id}),
-  // donc on ne charge qu'une fois les données déchiffrées
   useEffect(() => {
     let cancelled = false;
     itemService.getItem(item.id)
@@ -51,125 +55,143 @@ export default function VaultDetail({ item, onClose, onEdit, onDeleted, folders 
     }
   };
 
+  const copyButton = (value, key, label) => (
+    <button
+      className={`detail-action ${copied === key ? 'copied' : ''}`}
+      onClick={() => copy(value, key)}
+      title={copied === key ? 'Copié' : 'Copier'}
+      aria-label={`Copier ${label.toLowerCase()}`}
+    >
+      <IconCopy className="icon-sm" />
+    </button>
+  );
+
   const renderField = (label, key, value) => {
     if (!value) return null;
     return (
-      <div className="detail-field">
-        <label className="detail-label">{label}</label>
-        <div className="detail-value-row">
-          <span className="detail-value">{value}</span>
-          <button
-            className={`detail-copy btn-copy-icon ${copied === key ? 'copied' : ''}`}
-            onClick={() => copy(value, key)}
-            title={copied === key ? 'Copié' : 'Copier'}
-            aria-label={`Copier ${label.toLowerCase()}`}
-          >
-            <IconCopy className="icon-sm" />
-          </button>
+      <div className="detail-row">
+        <div className="detail-row-content">
+          <span className="detail-row-label">{label}</span>
+          <span className="detail-row-value">{value}</span>
         </div>
+        {copyButton(value, key, label)}
       </div>
     );
   };
 
   const renderPassword = () => (
     <>
-      {renderField('Identifiant', 'login', data.login)}
+      <div className="detail-card">
+        {renderField('Identifiant', 'login', data.login)}
 
-      <div className="detail-field">
-        <label className="detail-label">Mot de passe</label>
-        <div className="detail-value-row">
-          <span className="detail-value detail-password">
-            {showPassword ? <ColoredPassword value={data.password} /> : '••••••••••••'}
-          </span>
-          <button className="detail-eye" onClick={() => setShowPassword(v => !v)}>
+        <div className="detail-row">
+          <div className="detail-row-content">
+            <span className="detail-row-label">Mot de passe</span>
+            <span className="detail-row-value detail-password">
+              {showPassword ? <ColoredPassword value={data.password} /> : <MaskedPassword value={data.password} />}
+            </span>
+          </div>
+          <button
+            className="detail-action"
+            onClick={() => setShowPassword(v => !v)}
+            title={showPassword ? 'Masquer' : 'Afficher'}
+            aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+          >
             {showPassword ? <IconEyeOff className="icon-sm" /> : <IconEye className="icon-sm" />}
           </button>
-          <button
-            className={`detail-copy btn-copy-icon ${copied === 'password' ? 'copied' : ''}`}
-            onClick={() => copy(data.password, 'password')}
-            title={copied === 'password' ? 'Copié' : 'Copier'}
-            aria-label="Copier le mot de passe"
-          >
-            <IconCopy className="icon-sm" />
-          </button>
+          {copyButton(data.password, 'password', 'le mot de passe')}
         </div>
       </div>
 
       {data.note && (
-        <div className="detail-field">
-          <label className="detail-label">Note</label>
-          <p className="detail-note">{data.note}</p>
+        <div className="detail-section">
+          <span className="detail-section-title">Note</span>
+          <p className="detail-card detail-note">{data.note}</p>
         </div>
       )}
     </>
   );
 
   const renderContact = () => (
-    <>
+    <div className="detail-card">
       {renderField('Prénom', 'first_name', data.first_name)}
       {renderField('Nom', 'last_name', data.last_name)}
       {renderField('Email', 'email', data.email)}
       {renderField('Téléphone', 'phone', data.phone)}
-    </>
+    </div>
   );
 
   return (
     <div className="vault-detail">
-      <div className="vault-detail-header">
-        <div className="vault-detail-heading">
+      <div className="vault-detail-inner">
+        <div className="vault-detail-header">
           <ItemAvatar item={item} size="lg" />
-          <h2 className="vault-detail-title">{item.title}</h2>
+          <div className="vault-detail-titles">
+            <h2 className="vault-detail-title" title={item.title}>{item.title}</h2>
+            <div className="vault-detail-meta">
+              <span>{item.type === 'contact' ? 'Contact' : 'Mot de passe'}</span>
+              {folder && (
+                <span className="detail-badge" title={getFolderPath(folders, folder.id)}>
+                  <IconFolder className="icon-xs" />
+                  {getFolderPath(folders, folder.id)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="vault-detail-toolbar">
+            <button
+              className="detail-tool"
+              onClick={() => onEdit?.(data)}
+              disabled={!data}
+              title="Modifier"
+              aria-label="Modifier"
+            >
+              <IconEdit className="icon-btn" />
+            </button>
+            <button
+              className="detail-tool detail-tool-danger"
+              onClick={() => setConfirmDelete(true)}
+              title="Supprimer"
+              aria-label="Supprimer"
+            >
+              <IconTrash className="icon-btn" />
+            </button>
+            <span className="detail-tool-sep" aria-hidden="true" />
+            <button className="detail-tool" onClick={onClose} title="Fermer" aria-label="Fermer">
+              <IconClose className="icon-btn" />
+            </button>
+          </div>
         </div>
-        <button className="vault-detail-close" onClick={onClose} title="Fermer" aria-label="Fermer">
-          <IconClose className="icon-btn" />
-        </button>
+
+        {confirmDelete && (
+          <div className="detail-confirm-banner">
+            <span>Supprimer « {item.title} » ?</span>
+            <div className="detail-confirm-actions">
+              <button className="detail-confirm-cancel" onClick={() => setConfirmDelete(false)} disabled={isDeleting}>
+                Annuler
+              </button>
+              <button className="detail-confirm-delete" onClick={handleDelete} disabled={isDeleting}>
+                {isDeleting ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="detail-body">
+          {error && <p className="modal-error">{error}</p>}
+          {!data && !error && <p className="detail-loading">Chargement...</p>}
+          {data && item.type === 'password' && renderPassword()}
+          {data && item.type === 'contact' && renderContact()}
+        </div>
+
+        {(item.CreatedAt || item.UpdatedAt) && (
+          <div className="detail-dates">
+            {item.UpdatedAt && <span>Modifié le {formatDate(item.UpdatedAt)}</span>}
+            {item.CreatedAt && <span>Créé le {formatDate(item.CreatedAt)}</span>}
+          </div>
+        )}
       </div>
-
-      {folder && (
-        <div className="detail-badge">
-          <IconFolder className="icon-xs" />
-          {folder.name}
-        </div>
-      )}
-
-      <div className="detail-fields">
-        {error && <p className="modal-error">{error}</p>}
-        {!data && !error && <p className="detail-note">Chargement...</p>}
-        {data && item.type === 'password' && renderPassword()}
-        {data && item.type === 'contact' && renderContact()}
-      </div>
-
-      {confirmDelete ? (
-        <div className="detail-actions detail-confirm">
-          <button className="btn-edit" onClick={() => setConfirmDelete(false)} disabled={isDeleting}>
-            Annuler
-          </button>
-          <button className="btn-delete btn-delete-confirm" onClick={handleDelete} disabled={isDeleting}>
-            <IconTrash className="icon-btn" />
-            {isDeleting ? 'Suppression...' : 'Supprimer'}
-          </button>
-        </div>
-      ) : (
-        <div className="detail-actions">
-          <button
-            className="btn-edit btn-icon"
-            onClick={() => onEdit?.(data)}
-            disabled={!data}
-            title="Modifier"
-            aria-label="Modifier"
-          >
-            <IconEdit className="icon-btn" />
-          </button>
-          <button
-            className="btn-delete btn-icon"
-            onClick={() => setConfirmDelete(true)}
-            title="Supprimer"
-            aria-label="Supprimer"
-          >
-            <IconTrash className="icon-btn" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

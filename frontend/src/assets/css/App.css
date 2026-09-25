@@ -54,6 +54,48 @@
   box-shadow: 0 0 0 3px rgba(100,116,139,0.15);
 }
 
+/* Champ mot de passe : œil pour afficher ce qu'on tape */
+.input-password {
+  position: relative;
+}
+
+.input-password .input-field {
+  padding-right: 2.6rem;
+}
+
+.input-eye {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-lockbox-400);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.input-eye:hover {
+  color: var(--color-lockbox-700);
+  background: var(--color-lockbox-100);
+}
+
+.input-eye:focus-visible {
+  outline: 2px solid var(--color-lockbox-500);
+  outline-offset: 1px;
+}
+
+.input-eye svg {
+  width: 18px;
+  height: 18px;
+}
+
 .btn-primary {
   width: 100%;
   padding: 0.8rem;

@@ -30,6 +30,8 @@ func GenerateVerificationToken(email string) (string, error) { // génère un JW
     return token.SignedString([]byte(os.Getenv("JWT_SECRET_2")))
 }
 
+const RefreshTokenLifetime = time.Minute * 15
+
 func GenerateRefreshToken() (string, error) {
     bytes := make([]byte, 32)
     _, err := rand.Read(bytes)

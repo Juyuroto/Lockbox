@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/api';
+import { startSession, END_REASONS } from '../services/session';
 import AuthLayout from '../components/AuthLayout';
 import Input from '../components/Input';
 import Button from '../components/Button';
@@ -15,6 +16,8 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const successMessage = location.state?.message;
+  // Motif de la déconnexion automatique (?reason=inactive|expired)
+  const endReason = END_REASONS[new URLSearchParams(location.search).get('reason')];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,8 +25,8 @@ export default function Login() {
     setIsLoading(true);
     try {
       const response = await authService.login(email, password);
-      localStorage.setItem('lockbox_token', response.token);
-      navigate('/dashboard');
+      startSession(response.token, response.refresh_token);
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.message || 'Email ou mot de passe incorrect');
     } finally {
@@ -40,6 +43,7 @@ export default function Login() {
         </div>
 
         {successMessage && <div className="alert alert-success">{successMessage}</div>}
+        {endReason && !error && <div className="alert alert-info">{endReason}</div>}
         {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit} className="login-form">

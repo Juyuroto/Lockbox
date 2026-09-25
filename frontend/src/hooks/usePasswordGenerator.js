@@ -2,11 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { generatePassword, getPools, randomChar } from '../utils/generatePassword';
 
 const FRAME_MS = 35;
-// Nombre d'images où tout défile avant que le premier caractère se fixe
 const SCRAMBLE_FRAMES = 6;
 
-// Génère un mot de passe avec un effet de défilement : les caractères se fixent un par un
-// de gauche à droite. onChange est appelé à chaque image puis avec le mot de passe final.
 export function usePasswordGenerator(onChange) {
   const [isGenerating, setIsGenerating] = useState(false);
   const timer = useRef(null);

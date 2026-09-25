@@ -358,6 +358,11 @@
   color: #dc2626;
 }
 
+.alert-info {
+  background: var(--color-lockbox-100);
+  color: var(--color-lockbox-800);
+}
+
 .alert-success {
   background: #dcfce7;
   color: #16a34a;

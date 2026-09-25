@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { icons } from '../assets/icons/icons';
 import { itemService } from '../services/api';
+import { flattenFolders } from '../utils/folders';
 import PasswordField from './PasswordField';
 import ItemAvatar from './ItemAvatar';
 
@@ -14,7 +15,6 @@ const ITEM_TYPES = [
   { value: 'contact', label: 'Contact' },
 ];
 
-// item = infos de la liste (title, type, folder_id), data = champs déchiffrés
 export default function EditItemModal({ item, data: initialData, folders, onClose, onSaved }) {
   const [form, setForm] = useState({
     title: item.title,
@@ -30,7 +30,6 @@ export default function EditItemModal({ item, data: initialData, folders, onClos
   const set = (key, value) => setForm(f => ({ ...f, [key]: value }));
   const setField = (key, value) => setData(d => ({ ...d, [key]: value }));
 
-  // Revenir au type d'origine restaure les données d'origine, sinon on part de champs vides
   const handleTypeChange = (type) => {
     set('type', type);
     setData(type === item.type ? { ...EMPTY_DATA[type], ...initialData } : EMPTY_DATA[type]);
@@ -118,8 +117,10 @@ export default function EditItemModal({ item, data: initialData, folders, onClos
                 onChange={e => set('folder_id', e.target.value)}
               >
                 <option value="">Coffre-fort</option>
-                {folders.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
+                {flattenFolders(folders).map(f => (
+                  <option key={f.id} value={f.id}>
+                    {'\u00A0\u00A0'.repeat(f.depth)}{f.name}
+                  </option>
                 ))}
               </select>
             </div>

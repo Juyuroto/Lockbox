@@ -154,7 +154,7 @@ func LoginUserController(c *gin.Context) {
     refreshToken := models.RefreshToken{
         UserID:    user.ID,
         Token:     refreshTokenString,
-        ExpiresAt: time.Now().Add(time.Hour * 24),
+        ExpiresAt: time.Now().Add(services.RefreshTokenLifetime),
         Revoked:   false,
     }
 

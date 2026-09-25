@@ -22,6 +22,7 @@ func main() {
 	routes.ItemRoute(router)
 	routes.FolderRoute(router)
 	routes.VaultRoute(router)
+	routes.RefreshTRoute(router)
 
 	log.Println("[Serveur] Démarrage immédiat sur le port " + os.Getenv("BACKEND_PORT"))
 	if err := router.Run(":" + os.Getenv("BACKEND_PORT")); err != nil {
