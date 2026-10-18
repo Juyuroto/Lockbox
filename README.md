@@ -139,3 +139,11 @@ L'application sera disponible sur :
 - Les mots de passe maîtres sont hachés avec **bcrypt**
 - Les mots de passe stockés sont chiffrés avec **AES-256-GCM**
 - Les tokens JWT expirent après **24h**
+
+---
+
+## Licence
+
+Ce projet est distribué sous licence [AGPL-3.0](LICENSE).
+
+Copyright (C) 2026 Alain Corazzini
