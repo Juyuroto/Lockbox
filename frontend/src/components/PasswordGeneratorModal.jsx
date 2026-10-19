@@ -4,6 +4,7 @@ import { icons } from '../assets/icons/icons';
 import { generatePassword, passwordStrength, loadGeneratorOptions, saveGeneratorOptions } from '../utils/generatePassword';
 import { usePasswordGenerator } from '../hooks/usePasswordGenerator';
 import ColoredPassword from './ColoredPassword';
+import MaskedPassword from './MaskedPassword';
 
 const MIN_LENGTH = 4;
 const MAX_LENGTH = 64;
@@ -50,7 +51,7 @@ export default function PasswordGeneratorModal({ onClose, onUse }) {
           {!password && <span className="generator-empty">Aucun caractère disponible</span>}
           {password && showPassword && <ColoredPassword value={password} />}
           {password && !showPassword && (
-            <span className="colored-password password-masked">{'•'.repeat(password.length)}</span>
+            <MaskedPassword value={password} />
           )}
           <button
             type="button"

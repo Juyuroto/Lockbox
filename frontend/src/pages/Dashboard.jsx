@@ -58,7 +58,7 @@ export default function Dashboard() {
     const fetchVault = async () => {
       try {
         const data = await vaultService.getVault();
-        setFolders(data.folders ?? []);
+        setFolders(data.folder ?? []);
         setPasswords(data.passwords ?? []);
       } catch (err) {
         console.error('Erreur lors du chargement du vault :', err.message);

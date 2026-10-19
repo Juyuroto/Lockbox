@@ -3,7 +3,6 @@ import { icons } from '../assets/icons/icons';
 import { itemService } from '../services/api';
 import { flattenFolders } from '../utils/folders';
 import PasswordField from './PasswordField';
-import { generatePassword, loadGeneratorOptions } from '../utils/generatePassword';
 
 const ITEM_TYPES = [
   { value: 'password', label: 'Mot de passe' },
@@ -15,12 +14,6 @@ const EMPTY_DATA = {
   contact: { first_name: '', last_name: '', email: '', phone: '' },
 };
 
-const initialData = (type) => (
-  type === 'password'
-    ? { ...EMPTY_DATA.password, password: generatePassword(loadGeneratorOptions()) }
-    : EMPTY_DATA[type]
-);
-
 export default function VaultModal({ folders, defaultFolder, onClose, onCreated }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
@@ -28,7 +21,7 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
     type: 'password',
     folder_id: defaultFolder ? String(defaultFolder) : '',
   });
-  const [data, setData] = useState(() => initialData('password'));
+  const [data, setData] = useState(EMPTY_DATA.password);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,7 +32,7 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
 
   const handleTypeChange = (type) => {
     set('type', type);
-    setData(initialData(type));
+    setData(EMPTY_DATA[type]);
   };
 
   const handleNext = (e) => {
@@ -147,7 +140,7 @@ export default function VaultModal({ folders, defaultFolder, onClose, onCreated 
                   <label className="detail-label">Identifiant *</label>
                   <input
                     className="modal-input"
-                    placeholder="email ou nom d'utilisateur"
+                    placeholder="login"
                     value={data.login}
                     onChange={e => setField('login', e.target.value)}
                     required

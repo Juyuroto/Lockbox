@@ -9,6 +9,7 @@ import (
 	"lockbox/models"
 	"lockbox/services"
 	"lockbox/config"
+	"lockbox/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -16,10 +17,9 @@ import (
 
 func GetUserController(c *gin.Context) {
 	
-	user := []models.User{}
-	config.DB.Find(&user)
-	c.JSON(200, &user)
-	
+	users := []models.User{}
+	config.DB.Find(&users)
+	utils.SendSuccess(c, 200, "Users retrieved successfully", users)
 }
 
 func CreateUserController(c *gin.Context) {
@@ -29,19 +29,19 @@ func CreateUserController(c *gin.Context) {
     }
 
     if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(400, gin.H{"error": "Invalid JSON data"})
+        utils.SendError(c, 400, "INVALID_JSON", "Invalid JSON data")
         return
     }
 
     var existingUser models.User
     if err := config.DB.Where("email = ?", input.Email).First(&existingUser).Error; err == nil {
-        c.JSON(409, gin.H{"error": "This email is already in use."})
+        utils.SendError(c, 409, "EMAIL_IN_USE", "This email is already in use.")
         return
     }
 
     token, err := services.GenerateVerificationToken(input.Email)
     if err != nil {
-        c.JSON(500, gin.H{"error": "Error generating token"})
+        utils.SendError(c, 500, "TOKEN_GENERATION_ERROR", "Error generating token")
         return
     }
 
@@ -51,11 +51,11 @@ func CreateUserController(c *gin.Context) {
     
     if err != nil {
     	log.Println("SendMail error:", err)
-    	c.JSON(500, gin.H{"error": "Error Send Mail"})
+    	utils.SendError(c, 500, "EMAIL_SEND_ERROR", "Error Send Mail")
      	return
     }
 
-    c.JSON(200, gin.H{"message": "Mail submit"})
+    utils.SendSuccess(c, 200, "Mail submit successfully", nil)
 }
 
 func CreateUserCompleteController(c *gin.Context) {
@@ -66,31 +66,31 @@ func CreateUserCompleteController(c *gin.Context) {
     }
 
     if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(400, gin.H{"error": "Invalid JSON data"})
+        utils.SendError(c, 400, "INVALID_JSON", "Invalid JSON data")
         return
     }
 
     email, err := services.VerifyVerificationToken(input.Token)
     if err != nil {
-        c.JSON(401, gin.H{"error": "Token invalide ou expiré"})
+        utils.SendError(c, 401, "INVALID_TOKEN", "Token invalide ou expiré")
         return
     }
     
     var existingUser models.User
     if err := config.DB.Where("email = ?", email).First(&existingUser).Error; err == nil {
-        c.JSON(409, gin.H{"error": "This email is already in use."})
+        utils.SendError(c, 409, "EMAIL_IN_USE", "This email is already in use.")
         return
     }
 
     hashed, err := services.HashPassword(input.Password)
     if err != nil {
-        c.JSON(500, gin.H{"error": "Error hashing the password"})
+        utils.SendError(c, 500, "HASH_ERROR", "Error hashing the password")
         return
     }
 
     EncryptionKey, err := services.GenerateUserKey()
     if err != nil {
-        c.JSON(500, gin.H{"error": "Error creating the security key"})
+        utils.SendError(c, 500, "KEY_GENERATION_ERROR", "Error creating the security key")
         return
     }
 
@@ -112,8 +112,12 @@ func CreateUserCompleteController(c *gin.Context) {
     
         return nil
     })
+    if err != nil {
+		utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error creating user and vault")
+		return
+	}
 
-    c.JSON(200, gin.H{"message": "User created successfully"})
+    utils.SendSuccess(c, 201, "User created successfully", nil)
 }
 
 func LoginUserController(c *gin.Context) {
@@ -124,30 +128,30 @@ func LoginUserController(c *gin.Context) {
     }
 
     if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(400, gin.H{"error": "Invalid JSON data"})
+        utils.SendError(c, 400, "INVALID_JSON", "Invalid JSON data")
         return
     }
 
     var user models.User
     if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-        c.JSON(401, gin.H{"error": "User Not Found"})
+        utils.SendError(c, 401, "USER_NOT_FOUND", "User Not Found")
         return
     }
 
     if !services.CheckPasswordHash(input.Password, user.Password) {
-        c.JSON(401, gin.H{"error": "Incorrect password"})
+        utils.SendError(c, 401, "INCORRECT_PASSWORD", "Incorrect password")
         return
     }
 
     accessToken, err := services.GenerateToken(user.ID, user.Email)
     if err != nil {
-        c.JSON(500, gin.H{"error": "Error generating token"})
+        utils.SendError(c, 500, "TOKEN_GENERATION_ERROR", "Error generating token")
         return
     }
 
     refreshTokenString, err := services.GenerateRefreshToken()
     if err != nil {
-        c.JSON(500, gin.H{"error": "Error generating refresh token"})
+        utils.SendError(c, 500, "TOKEN_GENERATION_ERROR", "Error generating refresh token")
         return
     }
 
@@ -159,12 +163,11 @@ func LoginUserController(c *gin.Context) {
     }
 
     if err := config.DB.Create(&refreshToken).Error; err != nil {
-        c.JSON(500, gin.H{"error": "Error saving refresh token"})
+        utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error saving refresh token")
         return
     }
 
-    c.JSON(200, gin.H{
-        "message":       "Login successful",
+    utils.SendSuccess(c, 200, "Login successful", gin.H{
         "token":         accessToken,
         "refresh_token": refreshTokenString,
         "user": gin.H{
@@ -179,12 +182,11 @@ func DeleteUserController(c *gin.Context) {
 	userID := c.MustGet("userID").(uint)
 
 	if err := config.DB.Delete(&models.User{}, userID).Error; err != nil {
-		c.JSON(500, gin.H{"error": "Unable to delete the user"})
+		utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Unable to delete the user")
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "User successfully deleted"})
-	
+	utils.SendSuccess(c, 200, "User successfully deleted", nil)	
 }
 
 func UpdateUserController(c *gin.Context) {
@@ -192,7 +194,7 @@ func UpdateUserController(c *gin.Context) {
 	var user models.User
 
 	if err := config.DB.Where("id = ?", c.MustGet("userID").(uint)).First(&user).Error; err != nil {
-		c.JSON(404, gin.H{"error": "User not found"})
+		utils.SendError(c, 404, "USER_NOT_FOUND", "User not found")
 		return
 	}
 
@@ -201,25 +203,20 @@ func UpdateUserController(c *gin.Context) {
     }
 
     if err := c.ShouldBindJSON(&input); err != nil {
-        c.JSON(400, gin.H{"error": "Invalid JSON data"})
+        utils.SendError(c, 400, "INVALID_JSON", "Invalid JSON data")
         return
     }
 
     newHashedPassword, err := services.HashPassword(input.Password)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "Error hashing the new password"})
+		utils.SendError(c, 500, "HASH_ERROR", "Error hashing the new password")
 		return
 	}
 
 	if err := config.DB.Model(&user).Update("password", newHashedPassword).Error; err != nil {
-		c.JSON(500, gin.H{"error": "Unable to update the password"})
+		utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Unable to update the password")
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"message": "Password successfully updated",
-	})
-	
+	utils.SendSuccess(c, 200, "Password successfully updated", nil)	
 }
-
-// 400 StatusBadRequest - 200 StatusOK - 404 StatusNotFound - 500 StatusInternalServerError - 401 StatusUnauthorized - 409 StatusConflict - 201 StatusCreated

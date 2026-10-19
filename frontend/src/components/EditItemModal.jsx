@@ -134,7 +134,7 @@ export default function EditItemModal({ item, data: initialData, folders, onClos
                 <label className="detail-label">Identifiant *</label>
                 <input
                   className="modal-input"
-                  placeholder="email ou nom d'utilisateur"
+                  placeholder="login"
                   value={data.login}
                   onChange={e => setField('login', e.target.value)}
                   required

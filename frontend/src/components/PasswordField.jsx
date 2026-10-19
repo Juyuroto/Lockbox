@@ -1,11 +1,12 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 import { icons } from '../assets/icons/icons';
 import ColoredPassword from './ColoredPassword';
+import MaskedPassword from './MaskedPassword';
 import PasswordGeneratorModal from './PasswordGeneratorModal';
 
 // Champ mot de passe des modales : masqué par défaut, œil pour afficher, bouton qui ouvre le générateur.
-// Quand il est affiché, le texte de l'input est transparent et une copie colorée est placée juste
-// derrière : les couleurs apparaissent directement dans le champ.
+// Le texte de l'input est toujours transparent : une copie placée juste derrière affiche soit le mot
+// de passe coloré, soit les mêmes points que le détail d'un item (MaskedPassword).
 export default function PasswordField({ value, onChange }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
@@ -29,28 +30,29 @@ export default function PasswordField({ value, onChange }) {
     <div className="detail-field">
       <label className="detail-label">Mot de passe *</label>
       <div className="modal-password-row">
-        <div className={`password-input ${showPassword ? 'is-revealed' : ''}`}>
-          {showPassword && (
-            <div className="modal-input password-input-mirror" ref={mirrorRef} aria-hidden="true">
-              <ColoredPassword value={value} />
-            </div>
-          )}
+        <div className={`password-input ${showPassword ? '' : 'is-masked'}`}>
+          <div className="modal-input password-input-mirror" ref={mirrorRef} aria-hidden="true">
+            {showPassword ? <ColoredPassword value={value} /> : <MaskedPassword value={value} />}
+          </div>
           <input
             ref={inputRef}
             className="modal-input"
-            type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
+            type="text"
+            placeholder="password"
             value={value}
             onChange={e => onChange(e.target.value)}
             onScroll={syncScroll}
             onSelect={syncScroll}
             onKeyUp={syncScroll}
+            // type="text" permettrait de copier le mot de passe masqué
+            onCopy={e => !showPassword && e.preventDefault()}
+            onCut={e => !showPassword && e.preventDefault()}
             spellCheck={false}
             autoComplete="new-password"
             required
           />
         </div>
-        <button type="button" className="detail-eye" onClick={() => setShowPassword(v => !v)}>
+        <button type="button" className="detail-eye" disabled={!value} onClick={() => setShowPassword(v => !v)}>
           {showPassword ? <IconEyeOff className="icon-sm" /> : <IconEye className="icon-sm" />}
         </button>
         <button

@@ -5,6 +5,7 @@ import (
 	
 	"lockbox/config"
 	"lockbox/models"
+	"lockbox/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,11 +18,11 @@ func GetFolderByIDController(c *gin.Context) {
 	var folder models.Folder
 
 	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).Preload("Children").First(&folder).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Folder Not Found"})
+		utils.SendError(c, 404, "FOLDER_NOT_FOUND", "Folder Not Found")
 		return
 	}
 
-	c.JSON(200, folder)
+	utils.SendSuccess(c, 200, "Folder retrieved successfully", folder)
 }
 
 func GetFolderItemController(c *gin.Context) {
@@ -31,18 +32,18 @@ func GetFolderItemController(c *gin.Context) {
 	var folder models.Folder
 
 	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).First(&folder).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Folder Not Found"})
+		utils.SendError(c, 404, "FOLDER_NOT_FOUND", "Folder Not Found")
 		return
 	}
 
 	var items []models.Item
 	
 	if err := config.DB.Where("folder_id = ? AND user_id = ?", id, userID).Find(&items).Error; err != nil {
-	    c.JSON(500, gin.H{"error": "Error fetching items"})
+		utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error fetching items")
 	    return
 	}
 
-	c.JSON(200, items)
+	utils.SendSuccess(c, 200, "Folder taken successfully", items)
 }
 
 func CreateFolderController(c *gin.Context) {
@@ -53,7 +54,7 @@ func CreateFolderController(c *gin.Context) {
     }
 
     if err := c.ShouldBindJSON(&input); err != nil {
-   		c.JSON(400, gin.H{"error": "Invalid Request Data",})
+     	utils.SendError(c, 400, "INVALID_JSON", "Invalid JSON data")
 		return
     }
 
@@ -62,7 +63,7 @@ func CreateFolderController(c *gin.Context) {
     var vault models.Vault
 
     if err := config.DB.Where("user_id = ?", userID).First(&vault).Error; err != nil {
-    	c.JSON(500, gin.H{"error": "Error fetching id"})
+    	utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error fetching id")
      	return
     }
 
@@ -75,7 +76,7 @@ func CreateFolderController(c *gin.Context) {
     }
 
     if err := query.First(&existingFolder).Error; err == nil {
-        c.JSON(409, gin.H{"error": "This name is already in use."})
+        utils.SendError(c, 409, "NAME_IN_USE", "This name is already in use.")
         return
     }
 
@@ -86,13 +87,13 @@ func CreateFolderController(c *gin.Context) {
 
      	if finalName := config.DB.Where("user_id = ? AND name = ? AND parent_id = ?", userID, candidateName, input.ParentID).First(&existingFolder).Error; finalName != nil {
           break
-      	}     	
+      	}	
     }
 
     if input.ParentID != nil {
   		var folder models.Folder
 		if err := config.DB.Where("id = ? AND user_id = ? AND vault_id = ?", *input.ParentID, userID, vault.ID).First(&folder).Error; err != nil {
-			c.JSON(404, gin.H{"error": "Folder not found"})
+			utils.SendError(c, 404, "FOLDER_NOT_FOUND", "Folder not found")
 			return
 		}
     }
@@ -105,11 +106,11 @@ func CreateFolderController(c *gin.Context) {
     }
 
     if err := config.DB.Create(&folder).Error; err != nil {
-    	c.JSON(500, gin.H{"error": "Error Creating the folder"})
+    	utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error Creating the folder")
      	return
     }
 
-    c.JSON(201, folder)
+    utils.SendSuccess(c, 201, "Folder created successfully", folder)
 }
 
 func DeleteFolderController(c *gin.Context) {
@@ -121,12 +122,12 @@ func DeleteFolderController(c *gin.Context) {
 	var folder models.Folder
 
 	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).Preload("Children").First(&folder).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Folder Not Found"})
+		utils.SendError(c, 404, "FOLDER_NOT_FOUND", "Folder Not Found")
 		return
 	}
 
 	if len(folder.Children) > 0 {
-		c.JSON(409, gin.H{"error": "Folder contains subfolders, delete them first"})
+		utils.SendError(c, 409, "FOLDER_HAS_SUBFOLDERS", "Folder contains subfolders, delete them first")
 		return
 	}
 
@@ -135,16 +136,16 @@ func DeleteFolderController(c *gin.Context) {
 	config.DB.Model(&models.Item{}).Where("folder_id = ?", folder.ID).Count(&count)
 
 	if count != 0 {
-		c.JSON(409, gin.H{"error": "Folder contains items, delete them first"})
+		utils.SendError(c, 409, "FOLDER_HAS_ITEMS", "Folder contains items, delete them first")
 		return
 	}
 
 	if err := config.DB.Delete(&folder).Error; err != nil {
-		c.JSON(500, gin.H{"error": "Error deleting the folder"})
+		utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error deleting the folder")
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Folder Deleted Successfully"})
+	utils.SendSuccess(c, 200, "Folder Deleted Successfully", nil)
 }
 
 func UpdateFolderController(c *gin.Context) {
@@ -156,7 +157,7 @@ func UpdateFolderController(c *gin.Context) {
 	var folder models.Folder
 
 	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).First(&folder).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Folder Not Found"})
+		utils.SendError(c, 404, "FOLDER_NOT_FOUND", "Folder Not Found")
 		return
 	}
 
@@ -166,14 +167,14 @@ func UpdateFolderController(c *gin.Context) {
     }
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid Request Data",})
+		utils.SendError(c, 400, "INVALID_JSON", "Invalid Request Data")
 		return
 	}
 
 	if input.ParentID != nil {
 		var parent models.Folder
 		if err := config.DB.Where("id = ? AND user_id = ? AND vault_id = ?", *input.ParentID, userID, folder.VaultID).First(&parent).Error; err != nil {
-			c.JSON(404, gin.H{"error": "Parent folder not found"})
+			utils.SendError(c, 404, "PARENT_NOT_FOUND", "Parent folder not found")
 			return
 		}
 
@@ -181,7 +182,7 @@ func UpdateFolderController(c *gin.Context) {
 		current := &parent
 		for {
 			if current.ID == folder.ID {
-				c.JSON(409, gin.H{"error": "A folder cannot be moved into itself or one of its subfolders"})
+				utils.SendError(c, 409, "INVALID_FOLDER_MOVE", "A folder cannot be moved into itself or one of its subfolders")
 				return
 			}
 			if current.ParentID == nil || visited[current.ID] {
@@ -201,12 +202,9 @@ func UpdateFolderController(c *gin.Context) {
 	folder.ParentID = input.ParentID
 
 	if err := config.DB.Save(&folder).Error; err != nil {
-		c.JSON(500, gin.H{"error": "Error updating the folder"})
+		utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error updating the folder")
 		return
 	}
 
-	c.JSON(200, folder)
-	
+	utils.SendSuccess(c, 200, "Folder updated successfully", folder)
 }
-
-// 400 StatusBadRequest - 200 StatusOK - 404 StatusNotFound - 500 StatusInternalServerError - 401 StatusUnauthorized - 409 StatusConflict - 201 StatusCreated

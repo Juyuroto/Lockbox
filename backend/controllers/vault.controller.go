@@ -3,6 +3,7 @@ package controllers
 import (
 	"lockbox/config"
 	"lockbox/models"
+	"lockbox/utils"
 	
 	"github.com/gin-gonic/gin"
 )
@@ -13,11 +14,9 @@ func GetVaultController(c *gin.Context) {
 
 	var vault models.Vault
     if err := config.DB.Preload("Folders").Preload("Passwords").Where("user_id = ?", userID).First(&vault).Error; err != nil {
-        c.JSON(404, gin.H{"error": "Vault not found"})
+        utils.SendError(c, 404, "VAULT_NOT_FOUND", "Vault not found")
         return
     }
 
-	c.JSON(200, vault)
+	utils.SendSuccess(c, 200, "Vault retrieved successfully", vault)
 }
-
-// 400 StatusBadRequest - 200 StatusOK - 404 StatusNotFound - 500 StatusInternalServerError - 401 StatusUnauthorized - 409 StatusConflict - 201 StatusCreated

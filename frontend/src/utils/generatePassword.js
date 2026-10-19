@@ -20,11 +20,11 @@ export const DEFAULT_OPTIONS = {
 
 const STORAGE_KEY = 'lockbox_generator_options';
 
-// Les derniers réglages sont gardés dans le navigateur pour la prochaine génération
+// Les derniers réglages sont gardés dans le navigateur, sauf la longueur : chaque item repart de la longueur par défaut
 export function loadGeneratorOptions() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return saved ? { ...DEFAULT_OPTIONS, ...saved } : DEFAULT_OPTIONS;
+    return saved ? { ...DEFAULT_OPTIONS, ...saved, length: DEFAULT_OPTIONS.length } : DEFAULT_OPTIONS;
   } catch {
     return DEFAULT_OPTIONS;
   }

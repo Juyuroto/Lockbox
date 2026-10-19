@@ -5,6 +5,7 @@ import (
 	"lockbox/config"
 	"lockbox/models"
 	"lockbox/services"
+	"lockbox/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -20,7 +21,7 @@ func CreateItemController(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid JSON data"})
+		utils.SendError(c, 400, "INVALID_JSON", "Invalid JSON data")
 		return
 	}
 
@@ -29,21 +30,21 @@ func CreateItemController(c *gin.Context) {
 	var vault models.Vault
 
 	if err := config.DB.Where("user_id = ?", userID).First(&vault).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Vault Not Found"})
+		utils.SendError(c, 404, "VAULT_NOT_FOUND", "Vault Not Found")
 		return
 	}
 
 	var user models.User
 
 	if err := config.DB.First(&user, userID).Error; err != nil{
-		c.JSON(404, gin.H{"error": "User not found"})
+		utils.SendError(c, 404, "USER_NOT_FOUND", "User not found")
 		return
 	}
 
 	if input.FolderID != nil {
 		var folder models.Folder
 		if err := config.DB.Where("id = ? AND user_id = ? AND vault_id = ?", *input.FolderID, userID, vault.ID).First(&folder).Error; err != nil {
-			c.JSON(404, gin.H{"error": "Folder not found"})
+			utils.SendError(c, 404, "FOLDER_NOT_FOUND", "Folder not found")
 			return
 		}
 	}
@@ -54,18 +55,18 @@ func CreateItemController(c *gin.Context) {
 	case "password":		
 		var passwordData models.PasswordData
 		if err := json.Unmarshal(input.Data, &passwordData); err != nil {
-			c.JSON(400, gin.H{"error": "Invalid password data"})
+			utils.SendError(c, 400, "INVALID_PASSWORD_DATA", "Invalid password data")
 			return
 		}
 
 		if err := binding.Validator.ValidateStruct(passwordData); err != nil {
-			c.JSON(400, gin.H{"error": "Login and password are required"})
+			utils.SendError(c, 400, "VALIDATION_ERROR", "Login and password are required")
 			return
 		}
 
 		jsonByte, err := json.Marshal(passwordData);
 		if err != nil {
-			c.JSON(500, gin.H{"error": "Error serializing the item"})
+			utils.SendError(c, 500, "SERIALIZATION_ERROR", "Error serializing the item")
 			return
 		}
 
@@ -74,36 +75,36 @@ func CreateItemController(c *gin.Context) {
 	case "contact":		
 		var contactData models.ContactData
 		if err := json.Unmarshal(input.Data, &contactData); err != nil {
-			c.JSON(400, gin.H{"error": "Invalid contact data"})
+			utils.SendError(c, 400, "INVALID_CONTACT_DATA", "Invalid contact data")
 			return
 		}
 
 		if contactData.FirstName == "" && contactData.LastName == "" {
-			c.JSON(400, gin.H{"error": "First name or last name is required"})
+			utils.SendError(c, 400, "VALIDATION_ERROR", "First name or last name is required")
 			return
 		}
 
 		if err := binding.Validator.ValidateStruct(contactData); err != nil {
-			c.JSON(400, gin.H{"error": "Invalid email"})
+			utils.SendError(c, 400, "VALIDATION_ERROR", "Invalid email")
 			return
 		}
 
 		jsonByte, err := json.Marshal(contactData);
 		if err != nil {
-			c.JSON(500, gin.H{"error": "Error serializing the item"})
+			utils.SendError(c, 500, "SERIALIZATION_ERROR", "Error serializing the item")
 			return
 		}
 
 		plaintext = string(jsonByte)
 		
 	default:
-		c.JSON(400, gin.H{"error": "Type not found"})
+		utils.SendError(c, 400, "TYPE_NOT_FOUND", "Type not found")
 		return
 	}
 
 	ciphertext, err := services.EncryptionAES(plaintext, user.EncryptionKey)
 	if err != nil {
-    	c.JSON(500, gin.H{"error": "Error encrypting the item"})
+    	utils.SendError(c, 500, "ENCRYPTION_ERROR", "Error encrypting the item")
      	return
 	}
 
@@ -117,12 +118,11 @@ func CreateItemController(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&item).Error; err != nil {
-		c.JSON(500, gin.H{"error": "Error creating the item"})
+		utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error creating the item")
 		return
 	}
 
-	c.JSON(201, gin.H{
-		"message":   "Item created",
+	utils.SendSuccess(c, 201, "Item created", gin.H{
 		"id":        item.ID,
 		"type":      item.Type,
 		"title":     item.Title,
@@ -139,7 +139,7 @@ func GetItemByIDController(c *gin.Context) {
 	var item models.Item
 
 	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).First(&item).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Item Not Found",})
+		utils.SendError(c, 404, "ITEM_NOT_FOUND", "Item Not Found")
 		return
 	}
 
@@ -147,17 +147,17 @@ func GetItemByIDController(c *gin.Context) {
 
 	var user models.User
 	if err := config.DB.First(&user, userID).Error; err != nil {
-		c.JSON(404, gin.H{"error": "User not found"})
+		utils.SendError(c, 404, "USER_NOT_FOUND", "User not found")
 		return
 	}
 
 	plaintext, err := services.DecryptionAES(ciphertext, user.EncryptionKey)
 	if err != nil {
-    	c.JSON(500, gin.H{"error": "Error decrypting the item"})
+    	utils.SendError(c, 500, "DECRYPTION_ERROR", "Error decrypting the item")
      	return
 	}
 
-	c.JSON(200, json.RawMessage(plaintext))
+	utils.SendSuccess(c, 200, "Item retrieved successfully", json.RawMessage(plaintext))
 }
 
 func UpdateItemController(c *gin.Context) {
@@ -169,7 +169,7 @@ func UpdateItemController(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": "Invalid JSON data"})
+		utils.SendError(c, 400, "INVALID_JSON", "Invalid JSON data")
 		return
 	}
 
@@ -179,14 +179,14 @@ func UpdateItemController(c *gin.Context) {
 	var item models.Item
 
 	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).First(&item).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Item Not Found"})
+		utils.SendError(c, 404, "ITEM_NOT_FOUND", "Item Not Found")
 		return
 	}
 
 	if input.FolderID != nil {
 		var folder models.Folder
 		if err := config.DB.Where("id = ? AND user_id = ? AND vault_id = ?", *input.FolderID, userID, item.VaultID).First(&folder).Error; err != nil {
-			c.JSON(404, gin.H{"error": "Folder not found"})
+			utils.SendError(c, 404, "FOLDER_NOT_FOUND", "Folder not found")
 			return
 		}
 	}
@@ -198,7 +198,7 @@ func UpdateItemController(c *gin.Context) {
 	if len(input.Data) > 0 {
 		var user models.User
 		if err := config.DB.First(&user, userID).Error; err != nil {
-			c.JSON(404, gin.H{"error": "User not found"})
+			utils.SendError(c, 404, "USER_NOT_FOUND", "User not found")
 			return
 		}
 
@@ -208,18 +208,18 @@ func UpdateItemController(c *gin.Context) {
 		case "password":
 			var passwordData models.PasswordData
 			if err := json.Unmarshal(input.Data, &passwordData); err != nil {
-				c.JSON(400, gin.H{"error": "Invalid password data"})
+				utils.SendError(c, 400, "INVALID_PASSWORD_DATA", "Invalid password data")
 				return
 			}
 
 			if err := binding.Validator.ValidateStruct(passwordData); err != nil {
-				c.JSON(400, gin.H{"error": "Login and password are required"})
+				utils.SendError(c, 400, "VALIDATION_ERROR", "Login and password are required")
 				return
 			}
 
 			jsonByte, err := json.Marshal(passwordData)
 			if err != nil {
-				c.JSON(500, gin.H{"error": "Error serializing the item"})
+				utils.SendError(c, 500, "SERIALIZATION_ERROR", "Error serializing the item")
 				return
 			}
 
@@ -228,36 +228,36 @@ func UpdateItemController(c *gin.Context) {
 		case "contact":
 			var contactData models.ContactData
 			if err := json.Unmarshal(input.Data, &contactData); err != nil {
-				c.JSON(400, gin.H{"error": "Invalid contact data"})
+				utils.SendError(c, 400, "INVALID_CONTACT_DATA", "Invalid contact data")
 				return
 			}
 
 			if contactData.FirstName == "" && contactData.LastName == "" {
-				c.JSON(400, gin.H{"error": "First name or last name is required"})
+				utils.SendError(c, 400, "VALIDATION_ERROR", "First name or last name is required")
 				return
 			}
 
 			if err := binding.Validator.ValidateStruct(contactData); err != nil {
-				c.JSON(400, gin.H{"error": "Invalid email"})
+				utils.SendError(c, 400, "VALIDATION_ERROR", "Invalid email")
 				return
 			}
 
 			jsonByte, err := json.Marshal(contactData)
 			if err != nil {
-				c.JSON(500, gin.H{"error": "Error serializing the item"})
+				utils.SendError(c, 500, "SERIALIZATION_ERROR", "Error serializing the item")
 				return
 			}
 
 			plaintext = string(jsonByte)
 
 		default:
-			c.JSON(400, gin.H{"error": "Type not found"})
+			utils.SendError(c, 400, "TYPE_NOT_FOUND", "Type not found")
 			return
 		}
 
 		ciphertext, err := services.EncryptionAES(plaintext, user.EncryptionKey)
 		if err != nil {
-			c.JSON(500, gin.H{"error": "Error encrypting the item"})
+			utils.SendError(c, 500, "ENCRYPTION_ERROR", "Error encrypting the item")
 			return
 		}
 
@@ -265,11 +265,11 @@ func UpdateItemController(c *gin.Context) {
 	}
 
 	if err := config.DB.Save(&item).Error; err != nil {
-		c.JSON(500, gin.H{"error": "Error updating the item"})
+		utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error updating the item")
 		return
 	}
 
-	c.JSON(200, gin.H{
+	utils.SendSuccess(c, 200, "Item updated", gin.H{
 		"message":   "Item updated",
 		"id":        item.ID,
 		"type":      item.Type,
@@ -287,17 +287,14 @@ func DeleteItemController(c *gin.Context) {
 	var item models.Item
 
 	if err := config.DB.Where("id = ? AND user_id = ?", id, userID).First(&item).Error; err != nil {
-		c.JSON(404, gin.H{"error": "Item Not Found",})
+		utils.SendError(c, 404, "ITEM_NOT_FOUND", "Item Not Found")
 		return
 	}
 
 	if err := config.DB.Delete(&item).Error; err != nil {
-		c.JSON(500, gin.H{"error": "Error deleting the item"})
+		utils.SendError(c, 500, "INTERNAL_SERVER_ERROR", "Error deleting the item")
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Item Deleted Successfully"})
-	
+	utils.SendSuccess(c, 200, "Item Deleted Successfully", nil)
 }
-
-// 400 StatusBadRequest - 200 StatusOK - 404 StatusNotFound - 500 StatusInternalServerError - 401 StatusUnauthorized - 409 StatusConflict - 201 StatusCreated
